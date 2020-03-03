@@ -1,7 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton } from '@ionic/react';
 import React from 'react';
-import { useState } from 'react';
-import * as axios from 'axios';
 
 const Home: React.FC = () => {
 
@@ -13,7 +11,8 @@ const Home: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-
+        <IonButton routerLink="/emails/">Email List</IonButton>
+        <IonButton routerLink="/quiz/">Edit Quiz</IonButton>
       </IonContent>
     </IonPage>
   );

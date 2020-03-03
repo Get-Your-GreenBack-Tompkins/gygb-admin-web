@@ -1,18 +1,28 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel } from '@ionic/react';
-import React from 'react';
-import { useState } from 'react';
-import * as axios from 'axios';
+import {
+  IonContent,
+  IonHeader,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+  IonList,
+  IonItem,
+  IonLabel
+} from "@ionic/react";
+import React from "react";
+import { useState } from "react";
+
+import api from "../api";
 
 const Home: React.FC = () => {
-
   const [emails, setEmails] = useState();
 
   const getEmails = () => {
     if (!emails) {
-      axios.default.get("https://gygb-backend-v1.herokuapp.com/v1/user/emails/marketing/")
+      api
+        .get("/user/emails/marketing/")
         .then(res => setEmails(res.data.emailList));
     }
-  }
+  };
 
   getEmails();
 
@@ -25,7 +35,13 @@ const Home: React.FC = () => {
       </IonHeader>
       <IonContent className="ion-padding">
         <IonList>
-          {emails && emails.map((x: string) => <IonItem>  <IonLabel> {x} </IonLabel></IonItem>)}
+          {emails &&
+            emails.map((x: string) => (
+              <IonItem>
+                {" "}
+                <IonLabel> {x} </IonLabel>
+              </IonItem>
+            ))}
         </IonList>
       </IonContent>
     </IonPage>

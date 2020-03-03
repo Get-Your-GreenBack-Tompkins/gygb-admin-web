@@ -1,0 +1,16 @@
+.admin-text-input:hover {
+  border-bottom: 1px lightgray solid;
+}
+
+.admin-text-input:focus-within {
+  border-bottom: 2px grey solid;
+}
+
+.admin-text-container {
+    overflow: hidden;
+}
+
+.ql-tooltip {
+  z-index: 99999;
+  width: max-content;
+}

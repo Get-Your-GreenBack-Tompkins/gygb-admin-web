@@ -1,10 +1,10 @@
 import React from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import Emails from './pages/Emails';
-import EditQuiz from './pages/EditQuiz';
+import Quiz from './pages/Quiz';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -25,14 +25,15 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+import './theme/quill.css';
+
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
-        <Route path="/home" component={Home} exact={true} />
-        <Route path="/quiz" component={EditQuiz} exact={true} />
+        <Route path="/quiz" component={Quiz} exact={true} />
         <Route path="/emails" component={Emails} exact={true} />
-        <Route exact path="/" render={() => <Redirect to="/home" />} />
+        <Route path="/" component={Home} exact={true} />
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
