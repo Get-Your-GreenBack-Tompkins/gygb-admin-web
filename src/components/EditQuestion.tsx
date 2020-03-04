@@ -215,7 +215,18 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                         <IonRow>
                           <IonCol justify-content-start={true}>
                             <IonItem lines="none">
-                              <IonCheckbox slot="start"></IonCheckbox>
+                              <IonCheckbox
+                                onIonChange={event => {
+                                  const value = editedAnswers.find(
+                                    a => a.id === answer.id
+                                  );
+                                  value.correct = event.detail.checked;
+
+                                  setEditedAnswers([...editedAnswers]);
+                                }}
+                                checked={answer.correct}
+                                slot="start"
+                              ></IonCheckbox>
                               <IonLabel>Correct</IonLabel>
                             </IonItem>
                           </IonCol>
