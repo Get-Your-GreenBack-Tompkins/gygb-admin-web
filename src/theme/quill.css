@@ -7,10 +7,14 @@
 }
 
 .admin-text-container {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .ql-tooltip {
   z-index: 99999;
   width: max-content;
+}
+
+.edit-container {
+  position: relative;
 }

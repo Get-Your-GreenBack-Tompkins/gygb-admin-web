@@ -24,8 +24,8 @@ import { trash } from "ionicons/icons";
 
 interface EditQuestionProps {
   isOpen: boolean;
-  questionId: string;
-  close: (question: any) => void;
+  questionId: string | null;
+  close: (id?: string, question?: any) => void;
 }
 
 function parseDelta(deltaString: string) {
@@ -45,29 +45,22 @@ function constructEdit(
   edit: {
     header: null | string;
     body: null | string;
+    answers: any[];
   }
 ) {
   const editedQuestion = JSON.parse(JSON.stringify(question));
 
-  if (edit.header != null) {
-    editedQuestion.header = edit.header;
-  } else {
-    editedQuestion.header = question.header.delta;
-  }
+  editedQuestion.header = edit.header;
 
-  if (edit.body != null) {
-    editedQuestion.header = edit.body;
-  } else {
-    editedQuestion.body = question.body.delta;
-  }
+  editedQuestion.body = edit.body;
 
-  editedQuestion.body = question.body.delta;
-
-  editedQuestion.answers = editedQuestion.answers.map((a: any) => ({
+  editedQuestion.answers = edit.answers.map((a: any) => ({
     id: a.id,
     correct: a.correct,
-    text: a.text.delta
+    text: a.text
   }));
+
+  console.log("edited: ", editedQuestion);
 
   return editedQuestion;
 }
@@ -79,24 +72,37 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
 }) => {
   const [question, setQuestion] = useState();
 
-  const [editedHeader, setEditedHeader] = useState(null as null | string);
-  const [editedBody, setEditedBody] = useState(null as null | string);
+  const [editedHeader, setEditedHeader] = useState(null as null | QuillDelta);
+  const [editedBody, setEditedBody] = useState(null as null | QuillDelta);
   const [editedAnswers, setEditedAnswers] = useState([] as any[]);
 
-  function edit() {
-    const edits = {
-      header: editedHeader,
-      body: editedBody,
-      answers: editedAnswers
-    };
-    close(constructEdit(question, edits));
+  function edit(questionId?: string) {
+    if (questionId != null) {
+      const edits = {
+        header: JSON.stringify(editedHeader),
+        body: JSON.stringify(editedBody),
+        answers: editedAnswers.map(a => ({
+          ...a,
+          text: JSON.stringify(a.text.delta)
+        }))
+      };
+
+      close(questionId, constructEdit(question, edits));
+    } else {
+      close();
+    }
   }
 
   function addAnswer() {
-    setEditedAnswers([
-      ...editedAnswers,
-      { id: ++question.answerId, text: { delta: "[]" } }
-    ]);
+    const answerId = question.answerId + 1;
+    setQuestion({ ...question, answerId });
+
+    editedAnswers.push({
+      id: answerId,
+      correct: false,
+      text: { delta: parseDelta("[]") }
+    });
+    setEditedAnswers([...editedAnswers]);
   }
 
   function deleteAnswer(id: string) {
@@ -124,17 +130,25 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
   }
 
   useEffect(() => {
+    console.log("Loading question: ", questionId);
     if (questionId) {
       api.get(`/quiz/web-client/question/${questionId}/edit`).then(res => {
         setQuestion(res.data);
-        setEditedAnswers([...res.data.answers]);
+        setEditedAnswers([
+          ...res.data.answers.map((a: any) => ({
+            ...a,
+            text: { delta: parseDelta(a.text.delta) }
+          }))
+        ]);
+        setEditedBody(parseDelta(res.data.body.delta));
+        setEditedHeader(parseDelta(res.data.header.delta));
       });
     }
   }, [questionId]);
 
   let content;
 
-  if (!question) {
+  if (!question || !questionId || !editedHeader || !editedBody) {
     content = <div> Loading... </div>;
   } else {
     content = (
@@ -146,21 +160,17 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                 <IonItem>
                   <IonLabel>Header</IonLabel>
                   <ReactQuill
-                    defaultValue={parseDelta(question.header.delta)}
+                    value={editedHeader}
                     onChange={(html, delta, source, editor) => {
-                      const content = JSON.stringify(editor.getContents());
-
-                      setEditedHeader(content);
+                      setEditedHeader(editor.getContents());
                     }}
                   />
                 </IonItem>
                 <IonLabel>Body</IonLabel>
                 <ReactQuill
-                  defaultValue={parseDelta(question.body.delta)}
+                  value={editedBody}
                   onChange={(html, delta, source, editor) => {
-                    const content = JSON.stringify(editor.getContents());
-
-                    setEditedBody(content);
+                    setEditedBody(editor.getContents());
                   }}
                 />
               </IonList>
@@ -172,6 +182,7 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
               <IonButton onClick={() => addAnswer()}>Add Answer</IonButton>
               <IonReorderGroup disabled={false} onIonItemReorder={doReorder}>
                 {editedAnswers.map((answer: any) => {
+                  console.log(editedAnswers);
                   return (
                     <IonItem key={answer.id}>
                       <IonButton
@@ -189,14 +200,12 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                             <ReactQuill
                               theme="" // Use '' (base) theme.
                               className="admin-text-input"
-                              defaultValue={parseDelta(answer.text.delta)}
+                              value={answer.text.delta}
                               onChange={(html, delta, source, editor) => {
                                 const value = editedAnswers.find(
                                   a => a.id === answer.id
                                 );
-                                value.text.delta = JSON.stringify(
-                                  editor.getContents()
-                                );
+                                value.text.delta = editor.getContents();
 
                                 setEditedAnswers([...editedAnswers]);
                               }}
@@ -219,7 +228,7 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
             </IonCol>{" "}
           </IonRow>
         </IonGrid>
-        <IonButton onClick={() => edit()}>Close Modal</IonButton>
+        <IonButton onClick={() => edit(questionId)}>Save</IonButton>
       </IonContent>
     );
   }

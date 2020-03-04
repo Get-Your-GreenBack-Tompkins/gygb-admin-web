@@ -45,12 +45,19 @@ const EditQuiz: React.FC = () => {
     event.detail.complete();
   }
 
-  function close(question: any) {
+  function close(id?: string, question?: any) {
     setIsOpen(false);
-    setLoadingQuestions(true);
-    api
-      .post(`quiz/web-client/question/${questionId}/edit`, question)
-      .then(() => getQuestions());
+
+    setQuestionId(null);
+
+    if (id && question) {
+      setLoadingQuestions(true);
+      const data = JSON.parse(JSON.stringify(question));
+
+      api
+        .post(`quiz/web-client/question/${id}/edit`, data)
+        .then(() => getQuestions());
+    }
   }
 
   function editQuestion(question: any) {
@@ -91,7 +98,7 @@ const EditQuiz: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="edit-container">
       {loadingQuestions ? (
         <IonProgressBar type="indeterminate" reversed={true}></IonProgressBar>
       ) : null}
@@ -131,7 +138,7 @@ const EditQuiz: React.FC = () => {
             <EditQuestion
               questionId={questionId}
               isOpen={isOpen}
-              close={question => close(question)}
+              close={(id, question) => close(id, question)}
             />
           </IonReorderGroup>
         </IonCardContent>
