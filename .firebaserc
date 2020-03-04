@@ -1,5 +1,14 @@
 {
   "projects": {
-    "default": "get-your-greenback-admin"
+    "default": "get-your-greenback"
+  },
+  "targets": {
+    "get-your-greenback": {
+      "hosting": {
+        "admin": [
+          "get-your-greenback-admin"
+        ]
+      }
+    }
   }
 }
