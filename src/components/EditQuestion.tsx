@@ -29,7 +29,15 @@ interface EditQuestionProps {
 }
 
 function parseDelta(deltaString: string) {
-  return (new Delta(JSON.parse(deltaString)) as unknown) as QuillDelta;
+  let delta;
+
+  try {
+    delta = JSON.parse(deltaString);
+  } catch (err) {
+    delta = null;
+  }
+
+  return (new Delta(delta == null ? [] : delta) as unknown) as QuillDelta;
 }
 
 function constructEdit(
@@ -55,6 +63,12 @@ function constructEdit(
 
   editedQuestion.body = question.body.delta;
 
+  editedQuestion.answers = editedQuestion.answers.map((a: any) => ({
+    id: a.id,
+    correct: a.correct,
+    text: a.text.delta
+  }));
+
   return editedQuestion;
 }
 
@@ -79,7 +93,10 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
   }
 
   function addAnswer() {
-    setEditedAnswers([...editedAnswers, { text: { delta: "[]" } }]);
+    setEditedAnswers([
+      ...editedAnswers,
+      { id: ++question.answerId, text: { delta: "[]" } }
+    ]);
   }
 
   function deleteAnswer(id: string) {

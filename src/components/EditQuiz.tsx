@@ -47,7 +47,10 @@ const EditQuiz: React.FC = () => {
 
   function close(question: any) {
     setIsOpen(false);
-    api.post(`quiz/web-client/question/${questionId}/edit`, question);
+    setLoadingQuestions(true);
+    api
+      .post(`quiz/web-client/question/${questionId}/edit`, question)
+      .then(() => getQuestions());
   }
 
   function editQuestion(question: any) {
