@@ -3,7 +3,7 @@ name: CI
 on:
  push:
     branches:
-      - master
+      - dev
 
 jobs:
   build:
@@ -16,14 +16,16 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '12.x'
+    - name: Override API endpoint.
+      run: echo "REACT_APP_API_URL=https://gygb-backend-v1-dev.herokuapp.com/v1/" > $GITHUB_WORKSPACE/.env.production.local
     - name: NPM Install
       run: npm install
     - name: NPM Build
       run: npm run build
-    - name: Archive Production Build
+    - name: Archive Development Build
       uses: actions/upload-artifact@master
       with:
-        name: build-admin-prod
+        name: build-admin-dev
         path: build
   deploy:
     name: Deploy
@@ -35,11 +37,11 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@master
         with:
-          name: build-admin-prod
+          name: build-admin-dev
           path: build/
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.3.0
         with:
-          args: deploy --project production --only hosting:admin
+          args: deploy --project development --only hosting:admin
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
