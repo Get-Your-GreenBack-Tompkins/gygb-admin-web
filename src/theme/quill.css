@@ -18,3 +18,7 @@
 .edit-container {
   position: relative;
 }
+
+.slide-spacer {
+  padding-bottom: 40px;
+}
