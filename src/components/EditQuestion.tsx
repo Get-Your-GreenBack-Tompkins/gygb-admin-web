@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef, RefObject } from "react";
+import React, { useState, useEffect, createRef } from "react";
 import {
   IonModal,
   IonButton,
@@ -6,27 +6,27 @@ import {
   IonLabel,
   IonItem,
   IonGrid,
+  IonList,
+  IonInput,
+  IonSpinner,
+  IonAlert,
+  IonSelect,
+  IonSelectOption,
+  IonSlide,
+  IonSlides,
+  IonText,
   IonRow,
-  IonCol,
-  IonReorder,
-  IonReorderGroup,
-  IonCheckbox,
-  IonIcon,
-  IonList
+  IonCol
 } from "@ionic/react";
 import Delta from "quill-delta";
 import { Delta as QuillDelta } from "quill";
 import ReactQuill from "react-quill";
 
 import api from "../api";
-import { ItemReorderEventDetail } from "@ionic/core";
-import { trash } from "ionicons/icons";
-
-interface EditQuestionProps {
-  isOpen: boolean;
-  questionId: string | null;
-  close: (id?: string, question?: any) => void;
-}
+import { IonRowCol } from "./IonRowCol";
+import { MultiEdit } from "./MultiEdit";
+import { MultiScore } from "./MultiScore";
+import { save } from "ionicons/icons";
 
 function parseDelta(deltaString: string) {
   let delta;
@@ -60,31 +60,40 @@ function constructEdit(
     text: a.text
   }));
 
-  console.log("edited: ", editedQuestion);
+  console.log(JSON.stringify(editedQuestion, null, 4));
 
   return editedQuestion;
+}
+
+interface EditQuestionProps {
+  isOpen: boolean;
+  questionId: string | null;
+  close: (id?: string, question?: any) => void;
+  save: (id: string, question: any) => Promise<void>;
 }
 
 export const EditQuestion: React.FC<EditQuestionProps> = ({
   isOpen,
   questionId,
-  close
+  close,
+  save
 }) => {
   const [question, setQuestion] = useState();
 
-  const [editedHeader, setEditedHeader] = useState(null as null | QuillDelta);
+  const [editedHeader, setEditedHeader] = useState(null as null | string);
   const [editedBody, setEditedBody] = useState(null as null | QuillDelta);
-  const [editedAnswers, setEditedAnswers] = useState([] as any[]);
+
+  const [saving, setSaving] = useState(false);
+  const [saveAlert, setSaveAlert] = useState(null as null | Function);
+
+  const [answers, setAnswers] = useState([] as any[]);
 
   function edit(questionId?: string) {
     if (questionId != null) {
       const edits = {
-        header: JSON.stringify(editedHeader),
+        header: editedHeader,
         body: JSON.stringify(editedBody),
-        answers: editedAnswers.map(a => ({
-          ...a,
-          text: JSON.stringify(a.text.delta)
-        }))
+        answers
       };
 
       close(questionId, constructEdit(question, edits));
@@ -93,153 +102,231 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
     }
   }
 
-  function addAnswer() {
-    const answerId = question.answerId + 1;
-    setQuestion({ ...question, answerId });
+  function saveQuestion(questionId: string) {
+    const edits = {
+      header: editedHeader,
+      body: JSON.stringify(editedBody),
+      answers
+    };
 
-    editedAnswers.push({
-      id: answerId,
-      correct: false,
-      text: { delta: parseDelta("[]") }
-    });
-    setEditedAnswers([...editedAnswers]);
+    return save(questionId, constructEdit(question, edits));
   }
 
-  function deleteAnswer(id: string) {
-    const removedIndex = editedAnswers.findIndex(a => a.id === id);
-    if (removedIndex !== -1) {
-      editedAnswers.splice(removedIndex, 1);
-      setEditedAnswers([...editedAnswers]);
+  function getQuestion() {
+    return api.get(`/quiz/web-client/question/${questionId}/edit`).then(res => {
+      setQuestion(res.data);
+
+      setEditedBody(parseDelta(res.data.body.delta));
+      setEditedHeader(res.data.header);
+    });
+  }
+
+  function saveFailed() {
+    return new Promise((reject, resolve) => {
+      setSaveAlert(resolve);
+    });
+  }
+
+  function loadFailed() {
+    console.log("Fail!");
+  }
+
+  function addAnswer() {
+    if (questionId) {
+      setSaving(true);
+
+      saveQuestion(questionId)
+        .then(() => api.put(`/quiz/web-client/question/${questionId}/answer/`))
+        .catch(() => saveFailed())
+        .then(() => getQuestion())
+        .catch(() => loadFailed())
+        .finally(() => setSaving(false));
     }
   }
 
-  function doReorder(event: CustomEvent<ItemReorderEventDetail>) {
-    // The `from` and `to` properties contain the index of the item
-    // when the drag started and ended, respectively
-    console.log("Dragged from index", event.detail.from, "to", event.detail.to);
+  function deleteAnswer(id: string) {
+    const removedIndex = answers.findIndex((a: any) => a.id === id);
 
-    const index = event.detail.to;
-    const [removed] = editedAnswers.splice(event.detail.from, 1);
-    setEditedAnswers([
-      ...editedAnswers.slice(0, index),
-      removed,
-      ...editedAnswers.slice(index)
-    ]);
+    setSaving(true);
 
-    event.detail.complete();
+    if (removedIndex !== -1) {
+      answers.splice(removedIndex, 1);
+
+      setAnswers([...answers]);
+    }
+    saveQuestion(id)
+      .then(() =>
+        api.delete(`/quiz/web-client/question/${questionId}/answer/${id}`)
+      )
+      .then(() => getQuestion())
+      .catch(() => getQuestion())
+      .finally(() => setSaving(false));
   }
 
   useEffect(() => {
-    console.log("Loading question: ", questionId);
     if (questionId) {
-      api.get(`/quiz/web-client/question/${questionId}/edit`).then(res => {
-        setQuestion(res.data);
-        setEditedAnswers([
-          ...res.data.answers.map((a: any) => ({
-            ...a,
-            text: { delta: parseDelta(a.text.delta) }
-          }))
-        ]);
-        setEditedBody(parseDelta(res.data.body.delta));
-        setEditedHeader(parseDelta(res.data.header.delta));
-      });
+      getQuestion();
     }
   }, [questionId]);
 
   let content;
 
-  if (!question || !questionId || !editedHeader || !editedBody) {
-    content = <div> Loading... </div>;
+  const slider = createRef<HTMLIonSlidesElement>();
+  const scoringSlide = createRef<HTMLIonSlideElement>();
+
+  if (!question || !questionId || editedHeader == null || editedBody == null) {
+    content = <IonSpinner></IonSpinner>;
   } else {
     content = (
       <IonContent>
+        <IonGrid
+          style={{
+            bottom: 0,
+            left: 0,
+            right: 0,
+            position: "fixed",
+            zIndex: 999,
+            backgroundColor: "white",
+            boxShadow: "rgba(0,0,0,0.2) 0px -2px 2px",
+            padding: 0
+          }}
+          slot="fixed"
+        >
+          <IonRow>
+            <IonCol>
+              <IonButton
+                onClick={() => slider.current && slider.current.slideTo(0)}
+              >
+                Previous
+              </IonButton>
+            </IonCol>
+            <IonCol size="3">
+              <IonButton onClick={() => addAnswer()}>Add Answer</IonButton>
+            </IonCol>
+            <IonCol size="2">
+              <IonButton
+                onClick={() => {
+                  const id = questionId;
+
+                  saveQuestion(id);
+
+                  slider.current && slider.current.slideTo(1);
+                }}
+              >
+                Next
+              </IonButton>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
         <IonGrid>
           <IonRow>
             <IonCol>
-              <IonList>
-                <IonItem>
-                  <IonLabel>Header</IonLabel>
-                  <ReactQuill
-                    value={editedHeader}
-                    onChange={(html, delta, source, editor) => {
-                      setEditedHeader(editor.getContents());
+              <IonSlides ref={slider} pager={true}>
+                <IonSlide>
+                  <IonAlert
+                    isOpen={saveAlert !== null}
+                    onDidDismiss={() => {
+                      if (saveAlert) {
+                        saveAlert();
+                      }
+
+                      setSaveAlert(null);
                     }}
+                    header={"Error"}
+                    message={"Failed to save, some progress lost."}
+                    buttons={["Okay"]}
                   />
-                </IonItem>
-                <IonLabel>Body</IonLabel>
-                <ReactQuill
-                  value={editedBody}
-                  onChange={(html, delta, source, editor) => {
-                    setEditedBody(editor.getContents());
-                  }}
-                />
-              </IonList>
+                  <IonGrid class="slide-spacer">
+                    <IonRowCol>
+                      {saving ? (
+                        <IonItem>
+                          <IonSpinner></IonSpinner>
+                          <IonLabel>Saving...</IonLabel>
+                        </IonItem>
+                      ) : null}
+
+                      <IonList>
+                        <IonItem>
+                          <IonInput
+                            value={editedHeader}
+                            onIonChange={e => {
+                              const { value } = e.detail;
+
+                              setEditedHeader(value || "");
+                            }}
+                          />
+                        </IonItem>
+
+                        <IonItem lines="none">
+                          <IonLabel>Type</IonLabel>
+                          <IonSelect>
+                            <IonSelectOption>Multiple Choice</IonSelectOption>
+                          </IonSelect>
+                        </IonItem>
+
+                        <IonItem lines="none">
+                          <IonLabel>Content</IonLabel>
+                        </IonItem>
+
+                        <IonItem lines="none">
+                          <ReactQuill
+                            style={{ width: "100%" }}
+                            value={editedBody}
+                            onChange={(_html, _delta, _source, editor) => {
+                              setEditedBody(editor.getContents());
+                            }}
+                          />
+                        </IonItem>
+                      </IonList>
+                    </IonRowCol>
+
+                    <IonRowCol>
+                      <IonItem lines="none">
+                        <IonLabel>Answers</IonLabel>
+                      </IonItem>
+                      <MultiEdit
+                        question={question}
+                        onEdit={(answers: any[]) => setAnswers(answers)}
+                        onDelete={(answerId: string) => deleteAnswer(answerId)}
+                      ></MultiEdit>
+                    </IonRowCol>
+                  </IonGrid>
+                </IonSlide>
+
+                <IonSlide ref={scoringSlide}>
+                  <IonGrid>
+                    <IonRowCol>
+                      <IonList>
+                        <IonItem>
+                          <IonLabel>
+                            <h1>{question.header}</h1>
+                          </IonLabel>
+                        </IonItem>
+                        <IonItem lines="none">
+                          <IonText>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: question.body.sanitized
+                              }}
+                            ></div>
+                          </IonText>
+                        </IonItem>
+                      </IonList>
+                    </IonRowCol>
+                    <IonRow>
+                      <IonCol>
+                        <MultiScore
+                          onEdit={(answers: any[]) => setAnswers(answers)}
+                          question={question}
+                        ></MultiScore>
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
+                </IonSlide>
+              </IonSlides>
             </IonCol>
           </IonRow>
-          <IonRow>
-            <IonCol>
-              <IonLabel>Answers</IonLabel>
-              <IonButton onClick={() => addAnswer()}>Add Answer</IonButton>
-              <IonReorderGroup disabled={false} onIonItemReorder={doReorder}>
-                {editedAnswers.map((answer: any) => {
-                  console.log(editedAnswers);
-                  return (
-                    <IonItem key={answer.id}>
-                      <IonButton
-                        slot="end"
-                        onClick={() => deleteAnswer(answer.id)}
-                        color="danger"
-                      >
-                        <IonIcon icon={trash}></IonIcon>
-                      </IonButton>
-                      <IonReorder slot="end" />
-
-                      <IonGrid className="admin-text-container">
-                        <IonRow>
-                          <IonCol justify-content-start={true}>
-                            <ReactQuill
-                              theme="" // Use '' (base) theme.
-                              className="admin-text-input"
-                              value={answer.text.delta}
-                              onChange={(html, delta, source, editor) => {
-                                const value = editedAnswers.find(
-                                  a => a.id === answer.id
-                                );
-                                value.text.delta = editor.getContents();
-
-                                setEditedAnswers([...editedAnswers]);
-                              }}
-                            />
-                          </IonCol>
-                        </IonRow>
-                        <IonRow>
-                          <IonCol justify-content-start={true}>
-                            <IonItem lines="none">
-                              <IonCheckbox
-                                onIonChange={event => {
-                                  const value = editedAnswers.find(
-                                    a => a.id === answer.id
-                                  );
-                                  value.correct = event.detail.checked;
-
-                                  setEditedAnswers([...editedAnswers]);
-                                }}
-                                checked={answer.correct}
-                                slot="start"
-                              ></IonCheckbox>
-                              <IonLabel>Correct</IonLabel>
-                            </IonItem>
-                          </IonCol>
-                        </IonRow>
-                      </IonGrid>
-                    </IonItem>
-                  );
-                })}
-              </IonReorderGroup>
-            </IonCol>{" "}
-          </IonRow>
         </IonGrid>
-        <IonButton onClick={() => edit(questionId)}>Save</IonButton>
       </IonContent>
     );
   }
