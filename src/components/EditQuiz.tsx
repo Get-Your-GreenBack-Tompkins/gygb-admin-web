@@ -11,18 +11,18 @@ import {
   IonCardHeader,
   IonItemDivider,
   IonItemGroup,
-  IonFab,
-  IonFabButton,
   IonProgressBar,
   IonLoading
 } from "@ionic/react";
 import { ItemReorderEventDetail } from "@ionic/core";
-import React, { useState, useEffect, Component } from "react";
-import { add, create, trash } from "ionicons/icons";
+import React, { Component } from "react";
+import { create, trash } from "ionicons/icons";
 
-import api from "../api";
+import { ApiContext } from "../api";
+
 import EditQuestion from "./EditQuestion";
 import { Quiz, Question } from "../types/quiz";
+import { AxiosInstance } from "axios";
 
 export class EditQuiz extends Component<
   {},
@@ -34,6 +34,10 @@ export class EditQuiz extends Component<
     loadingQuestions: boolean;
   }
 > {
+  static contextType = ApiContext;
+
+  context!: AxiosInstance;
+
   doReorder(event: CustomEvent<ItemReorderEventDetail>) {
     const { state } = this;
 
@@ -54,7 +58,7 @@ export class EditQuiz extends Component<
   save(id: string, question: any) {
     const data = JSON.parse(JSON.stringify(question));
 
-    return api
+    return this.context
       .post(`quiz/web-client/question/${id}/edit`, data)
       .then(() => this.getQuestions());
   }
@@ -76,11 +80,13 @@ export class EditQuiz extends Component<
   }
 
   addQuestion() {
-    api.put(`quiz/web-client/question/`).then(() => this.getQuestions());
+    this.context
+      .put(`quiz/web-client/question/`)
+      .then(() => this.getQuestions());
   }
 
   deleteQuestion(question: any) {
-    api
+    this.context
       .delete(`quiz/web-client/question/${question.id}`)
       .then(() => this.getQuestions());
   }
@@ -90,7 +96,7 @@ export class EditQuiz extends Component<
       loadingQuestions: true
     });
 
-    return api
+    return this.context
       .get(`quiz/web-client`)
       .then(res => {
         this.setState({

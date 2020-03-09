@@ -8,13 +8,15 @@ import {
   IonItem,
   IonLabel
 } from "@ionic/react";
-import React from "react";
+import React, { useContext } from "react";
 import { useState } from "react";
 
-import api from "../api";
+import { ApiContext } from "../api";
 
 const Home: React.FC = () => {
   const [emails, setEmails] = useState();
+
+  const api = useContext(ApiContext);
 
   const getEmails = () => {
     if (!emails) {

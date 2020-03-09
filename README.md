@@ -28,6 +28,24 @@ npm install
 npm run start
 ```
 
+### Https Proxy
+
+To test and develop authentication, you must run the panel over HTTPS.
+
+To do so first configure the HTTPS proxy:
+
+```sh
+./configureHttps.sh
+```
+
+Next run the HTTPS proxy:
+```sh
+./runHttps.sh
+```
+
+Now the client is accessible over HTTPS at `https://localhost:3003` as long as `npm run start` is running.
+
+
 ### Build for production
 
 ```
