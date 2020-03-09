@@ -2,7 +2,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton } from 
 import React from 'react';
 
 const Home: React.FC = () => {
-
   return (
     <IonPage>
       <IonHeader>

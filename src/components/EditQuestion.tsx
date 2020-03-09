@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef } from "react";
+import React, { useState, useEffect, createRef, useContext } from "react";
 import {
   IonModal,
   IonButton,
@@ -22,11 +22,11 @@ import Delta from "quill-delta";
 import { Delta as QuillDelta } from "quill";
 import ReactQuill from "react-quill";
 
-import api from "../api";
+import { ApiContext } from "../api";
+
 import { IonRowCol } from "./IonRowCol";
 import { MultiEdit } from "./MultiEdit";
 import { MultiScore } from "./MultiScore";
-import { save } from "ionicons/icons";
 
 function parseDelta(deltaString: string) {
   let delta;
@@ -87,6 +87,8 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
   const [saveAlert, setSaveAlert] = useState(null as null | Function);
 
   const [answers, setAnswers] = useState([] as any[]);
+
+  const api = useContext(ApiContext);
 
   function edit(questionId?: string) {
     if (questionId != null) {
