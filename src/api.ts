@@ -1,8 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { createContext } from "react";
 
-console.log(process.env.REACT_APP_API_URL);
-
 const createApi = (auth_token?: string) => {
 
   return auth_token

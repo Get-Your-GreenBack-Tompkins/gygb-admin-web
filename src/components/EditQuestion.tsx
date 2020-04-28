@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
   IonModal,
   IonButton,
@@ -10,35 +10,19 @@ import {
   IonInput,
   IonSpinner,
   IonAlert,
-  IonSelect,
-  IonSelectOption,
-  IonSlide,
-  IonSlides,
   IonText,
   IonRow,
   IonCol
 } from "@ionic/react";
-import Delta from "quill-delta";
 import { Delta as QuillDelta } from "quill";
 import ReactQuill from "react-quill";
 
 import { ApiContext } from "../api";
+import { parseDelta } from "../util";
 
 import { IonRowCol } from "./IonRowCol";
 import { MultiEdit } from "./MultiEdit";
 import { MultiScore } from "./MultiScore";
-
-function parseDelta(deltaString: string) {
-  let delta;
-
-  try {
-    delta = JSON.parse(deltaString);
-  } catch (err) {
-    delta = null;
-  }
-
-  return (new Delta(delta == null ? [] : delta) as unknown) as QuillDelta;
-}
 
 function constructEdit(
   question: any,
@@ -54,9 +38,12 @@ function constructEdit(
 
   editedQuestion.body = edit.body;
 
+  console.log(edit);
+
   editedQuestion.answers = edit.answers.map((a: any) => ({
     id: a.id,
     correct: a.correct,
+    message: a.message,
     text: a.text
   }));
 
@@ -72,12 +59,12 @@ interface EditQuestionProps {
   save: (id: string, question: any) => Promise<void>;
 }
 
-export const EditQuestion: React.FC<EditQuestionProps> = ({
-  isOpen,
-  questionId,
-  close,
-  save
-}) => {
+export enum Page {
+  EditQuestion = 0,
+  EditScore = 1
+}
+
+export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, close, save }) => {
   const [question, setQuestion] = useState();
 
   const [editedHeader, setEditedHeader] = useState(null as null | string);
@@ -87,6 +74,8 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
   const [saveAlert, setSaveAlert] = useState(null as null | Function);
 
   const [answers, setAnswers] = useState([] as any[]);
+
+  const [page, setPage] = useState(0);
 
   const api = useContext(ApiContext);
 
@@ -114,14 +103,14 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
     return save(questionId, constructEdit(question, edits));
   }
 
-  function getQuestion() {
+  const getQuestion = useCallback(() => {
     return api.get(`/quiz/web-client/question/${questionId}/edit`).then(res => {
       setQuestion(res.data);
 
       setEditedBody(parseDelta(res.data.body.delta));
       setEditedHeader(res.data.header);
     });
-  }
+  }, [api, questionId]);
 
   function saveFailed() {
     return new Promise((reject, resolve) => {
@@ -157,24 +146,23 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
       setAnswers([...answers]);
     }
     saveQuestion(id)
-      .then(() =>
-        api.delete(`/quiz/web-client/question/${questionId}/answer/${id}`)
-      )
+      .then(() => api.delete(`/quiz/web-client/question/${questionId}/answer/${id}`))
       .then(() => getQuestion())
       .catch(() => getQuestion())
       .finally(() => setSaving(false));
   }
 
   useEffect(() => {
+    setPage(Page.EditQuestion);
+  }, [question, isOpen]);
+
+  useEffect(() => {
     if (questionId) {
       getQuestion();
     }
-  }, [questionId]);
+  }, [questionId, getQuestion]);
 
   let content;
-
-  const slider = createRef<HTMLIonSlidesElement>();
-  const scoringSlide = createRef<HTMLIonSlideElement>();
 
   if (!question || !questionId || editedHeader == null || editedBody == null) {
     content = <IonSpinner></IonSpinner>;
@@ -195,36 +183,54 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
           slot="fixed"
         >
           <IonRow>
-            <IonCol>
-              <IonButton
-                onClick={() => slider.current && slider.current.slideTo(0)}
-              >
-                Previous
-              </IonButton>
-            </IonCol>
-            <IonCol size="3">
-              <IonButton onClick={() => addAnswer()}>Add Answer</IonButton>
-            </IonCol>
-            <IonCol size="2">
-              <IonButton
-                onClick={() => {
-                  const id = questionId;
+            {page > 0 ? (
+              <IonCol>
+                <IonButton onClick={() => setPage(page - 1)}>Previous</IonButton>
+              </IonCol>
+            ) : (
+              <></>
+            )}
+            {page === Page.EditQuestion ? (
+              <IonCol size="auto">
+                <IonButton onClick={() => addAnswer()}>Add Answer</IonButton>
+              </IonCol>
+            ) : (
+              <></>
+            )}
+            {page < Page.EditScore ? (
+              <IonCol size="auto">
+                <IonButton
+                  onClick={() => {
+                    const id = questionId;
 
-                  saveQuestion(id);
+                    saveQuestion(id);
 
-                  slider.current && slider.current.slideTo(1);
-                }}
-              >
-                Next
-              </IonButton>
-            </IonCol>
+                    setPage(page + 1);
+                  }}
+                >
+                  Next
+                </IonButton>
+              </IonCol>
+            ) : (
+              <IonCol size="auto">
+                <IonButton
+                  onClick={() => {
+                    const id = questionId;
+
+                    edit(id);
+                  }}
+                >
+                  Save Question
+                </IonButton>
+              </IonCol>
+            )}
           </IonRow>
         </IonGrid>
         <IonGrid>
           <IonRow>
             <IonCol>
-              <IonSlides ref={slider} pager={true}>
-                <IonSlide>
+              {page === Page.EditQuestion ? (
+                <>
                   <IonAlert
                     isOpen={saveAlert !== null}
                     onDidDismiss={() => {
@@ -260,13 +266,6 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                         </IonItem>
 
                         <IonItem lines="none">
-                          <IonLabel>Type</IonLabel>
-                          <IonSelect>
-                            <IonSelectOption>Multiple Choice</IonSelectOption>
-                          </IonSelect>
-                        </IonItem>
-
-                        <IonItem lines="none">
                           <IonLabel>Content</IonLabel>
                         </IonItem>
 
@@ -288,14 +287,14 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                       </IonItem>
                       <MultiEdit
                         question={question}
-                        onEdit={(answers: any[]) => setAnswers(answers)}
+                        onEdit={setAnswers}
                         onDelete={(answerId: string) => deleteAnswer(answerId)}
                       ></MultiEdit>
                     </IonRowCol>
                   </IonGrid>
-                </IonSlide>
-
-                <IonSlide ref={scoringSlide}>
+                </>
+              ) : page === Page.EditScore ? (
+                <>
                   <IonGrid>
                     <IonRowCol>
                       <IonList>
@@ -318,14 +317,24 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({
                     <IonRow>
                       <IonCol>
                         <MultiScore
-                          onEdit={(answers: any[]) => setAnswers(answers)}
+                          onEdit={setAnswers}
                           question={question}
                         ></MultiScore>
                       </IonCol>
                     </IonRow>
                   </IonGrid>
-                </IonSlide>
-              </IonSlides>
+                </>
+              ) : (
+                <>
+                  <IonGrid>
+                    <IonRow>
+                      <IonCol>
+                        <p>An unknown error occured.</p>
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
+                </>
+              )}
             </IonCol>
           </IonRow>
         </IonGrid>

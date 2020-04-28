@@ -1,12 +1,10 @@
 import React from "react";
 
 import { Route } from "react-router-dom";
-import { IonApp, IonRouterOutlet } from "@ionic/react";
+import { IonApp } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 
 import Home from "./pages/Home";
-import Emails from "./pages/Emails";
-import Quiz from "./pages/Quiz";
 
 import Authenticated from "./components/Authenticated";
 
@@ -35,11 +33,7 @@ const App: React.FC = () => (
   <IonApp>
     <Authenticated>
       <IonReactRouter>
-        <IonRouterOutlet>
-          <Route path="/quiz" component={Quiz} exact={true} />
-          <Route path="/emails" component={Emails} exact={true} />
-          <Route path="/" component={Home} exact={true} />
-        </IonRouterOutlet>
+        <Route path="/" component={Home} />
       </IonReactRouter>
     </Authenticated>
   </IonApp>

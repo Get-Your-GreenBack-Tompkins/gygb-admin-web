@@ -34,11 +34,7 @@ function parseDelta(deltaString: string) {
   return (new Delta(delta == null ? [] : delta) as unknown) as QuillDelta;
 }
 
-export const MultiEdit: React.FC<MultiEditProps> = ({
-  question,
-  onEdit,
-  onDelete
-}) => {
+export const MultiEdit: React.FC<MultiEditProps> = ({ question, onEdit, onDelete }) => {
   const [editedAnswers, setEditedAnswers] = useState([] as any[]);
 
   useEffect(() => {
@@ -59,18 +55,14 @@ export const MultiEdit: React.FC<MultiEditProps> = ({
         text: JSON.stringify(a.text.delta)
       }))
     ]);
-  }, [editedAnswers]);
+  }, [onEdit, editedAnswers]);
 
   function doReorder(event: CustomEvent<ItemReorderEventDetail>) {
     const index = event.detail.to;
 
     const [removed] = editedAnswers.splice(event.detail.from, 1);
 
-    setEditedAnswers([
-      ...editedAnswers.slice(0, index),
-      removed,
-      ...editedAnswers.slice(index)
-    ]);
+    setEditedAnswers([...editedAnswers.slice(0, index), removed, ...editedAnswers.slice(index)]);
 
     event.detail.complete();
   }
@@ -79,14 +71,9 @@ export const MultiEdit: React.FC<MultiEditProps> = ({
     <IonRowCol>
       <IonReorderGroup disabled={false} onIonItemReorder={doReorder}>
         {editedAnswers.map((answer: any) => {
-          console.log(editedAnswers);
           return (
             <IonItem key={answer.id}>
-              <IonButton
-                slot="end"
-                onClick={() => onDelete(answer.id)}
-                color="danger"
-              >
+              <IonButton slot="end" onClick={() => onDelete(answer.id)} color="danger">
                 <IonIcon icon={trash}></IonIcon>
               </IonButton>
               <IonReorder slot="end" />
@@ -99,9 +86,7 @@ export const MultiEdit: React.FC<MultiEditProps> = ({
                       className="admin-text-input"
                       value={answer.text.delta}
                       onChange={(html, delta, source, editor) => {
-                        const value = editedAnswers.find(
-                          a => a.id === answer.id
-                        );
+                        const value = editedAnswers.find(a => a.id === answer.id);
                         value.text.delta = editor.getContents();
 
                         setEditedAnswers([...editedAnswers]);
