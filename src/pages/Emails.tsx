@@ -1,13 +1,4 @@
-import {
-  IonContent,
-  IonHeader,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-  IonList,
-  IonItem,
-  IonLabel
-} from "@ionic/react";
+import { IonContent, IonPage, IonList, IonItem, IonLabel } from "@ionic/react";
 import React, { useContext } from "react";
 import { useState } from "react";
 
@@ -20,9 +11,7 @@ const Home: React.FC = () => {
 
   const getEmails = () => {
     if (!emails) {
-      api
-        .get("/user/emails/marketing/")
-        .then(res => setEmails(res.data.emailList));
+      api.get("/user/emails/marketing/").then(res => setEmails(res.data.emailList));
     }
   };
 
@@ -30,11 +19,6 @@ const Home: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Get Your Greenback Tompkins</IonTitle>
-        </IonToolbar>
-      </IonHeader>
       <IonContent className="ion-padding">
         <IonList>
           {emails &&

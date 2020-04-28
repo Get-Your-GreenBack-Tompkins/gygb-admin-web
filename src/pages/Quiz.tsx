@@ -1,10 +1,4 @@
-import {
-  IonContent,
-  IonPage,
-  IonFab,
-  IonFabButton,
-  IonIcon
-} from "@ionic/react";
+import { IonContent, IonPage, IonFab, IonFabButton, IonIcon } from "@ionic/react";
 
 import React, { createRef } from "react";
 
@@ -19,9 +13,7 @@ const Quiz: React.FC = () => {
       <IonContent>
         <EditQuiz ref={editQuiz}></EditQuiz>
         <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton
-            onClick={() => editQuiz.current && editQuiz.current.addQuestion()}
-          >
+          <IonFabButton onClick={() => editQuiz.current && editQuiz.current.addQuestion()}>
             <IonIcon icon={add}></IonIcon>
           </IonFabButton>
         </IonFab>
