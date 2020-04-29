@@ -20,7 +20,7 @@ import ErrorContent from "./ErrorContent";
 
 export const EditRaffle: React.FC<{}> = () => {
   const [loadingInfo, setLoadingInfo] = useState(false);
-  const [loadingError, setLoadingError] = useState(true);
+  const [loadingError, setLoadingError] = useState(false);
   const [isRaffle, setIsRaffle] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [prize, setPrize] = useState(null as string | null);
