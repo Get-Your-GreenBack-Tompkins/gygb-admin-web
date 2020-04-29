@@ -38,16 +38,12 @@ function constructEdit(
 
   editedQuestion.body = edit.body;
 
-  console.log(edit);
-
   editedQuestion.answers = edit.answers.map((a: any) => ({
     id: a.id,
     correct: a.correct,
     message: a.message,
     text: a.text
   }));
-
-  console.log(JSON.stringify(editedQuestion, null, 4));
 
   return editedQuestion;
 }

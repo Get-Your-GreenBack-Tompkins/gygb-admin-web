@@ -52,8 +52,6 @@ export const EditQuizInfo: React.FC<{}> = () => {
       }
     };
 
-    console.log(edit);
-
     api
       .post(`quiz/web-client/edit`, edit)
       .then(() => {
