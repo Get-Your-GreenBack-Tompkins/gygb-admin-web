@@ -39,9 +39,9 @@ export class EditQuiz extends Component<
   context!: AxiosInstance;
 
   close() {
-    this.setState({ isOpen: false });
-
-    this.setState({ questionId: null });
+    this.setState({ isOpen: false, questionId: null });
+    
+    this.getQuestions();
   }
 
   editQuestion(question: any) {
