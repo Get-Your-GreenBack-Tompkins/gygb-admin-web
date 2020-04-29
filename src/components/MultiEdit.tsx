@@ -1,5 +1,5 @@
 import { IonRowCol } from "./IonRowCol";
-import React, { useState, useEffect } from "react";
+import React, { useCallback } from "react";
 import {
   IonReorderGroup,
   IonItem,
@@ -12,57 +12,34 @@ import {
 } from "@ionic/react";
 import { trash } from "ionicons/icons";
 import ReactQuill from "react-quill";
+
 import { ItemReorderEventDetail } from "@ionic/core";
-import Delta from "quill-delta";
-import { Delta as QuillDelta } from "quill";
 
 interface MultiEditProps {
-  question: any;
-  onEdit: (answers: any[]) => void;
+  value: any[];
+  onChange: (answers: any[]) => void;
   onDelete: (answerId: string) => void;
 }
 
-function parseDelta(deltaString: string) {
-  let delta;
-
-  try {
-    delta = JSON.parse(deltaString);
-  } catch (err) {
-    delta = null;
-  }
-
-  return (new Delta(delta == null ? [] : delta) as unknown) as QuillDelta;
-}
-
-export const MultiEdit: React.FC<MultiEditProps> = ({ question, onEdit, onDelete }) => {
-  const [editedAnswers, setEditedAnswers] = useState([] as any[]);
-
-  useEffect(() => {
-    setEditedAnswers([
-      ...question.answers.map((a: any) => ({
-        ...a,
-        text: {
-          delta: parseDelta(a.text.delta)
-        }
-      }))
-    ]);
-  }, [question]);
-
-  useEffect(() => {
-    onEdit([
-      ...editedAnswers.map((a: any) => ({
-        ...a,
-        text: JSON.stringify(a.text.delta)
-      }))
-    ]);
-  }, [onEdit, editedAnswers]);
+export const MultiEdit: React.FC<MultiEditProps> = ({ value, onChange: $onChange, onDelete }) => {
+  const onChange = useCallback(
+    (answers: any[]) => {
+      $onChange([
+        ...answers.map((a: any) => ({
+          ...a
+        }))
+      ]);
+    },
+    [$onChange]
+  );
 
   function doReorder(event: CustomEvent<ItemReorderEventDetail>) {
     const index = event.detail.to;
 
-    const [removed] = editedAnswers.splice(event.detail.from, 1);
+    const copy = value.slice();
+    const [removed] = copy.splice(event.detail.from, 1);
 
-    setEditedAnswers([...editedAnswers.slice(0, index), removed, ...editedAnswers.slice(index)]);
+    onChange([...copy.slice(0, index), removed, ...copy.slice(index)]);
 
     event.detail.complete();
   }
@@ -70,7 +47,7 @@ export const MultiEdit: React.FC<MultiEditProps> = ({ question, onEdit, onDelete
   return (
     <IonRowCol>
       <IonReorderGroup disabled={false} onIonItemReorder={doReorder}>
-        {editedAnswers.map((answer: any) => {
+        {value.map((answer: any) => {
           return (
             <IonItem key={answer.id}>
               <IonButton slot="end" onClick={() => onDelete(answer.id)} color="danger">
@@ -86,10 +63,10 @@ export const MultiEdit: React.FC<MultiEditProps> = ({ question, onEdit, onDelete
                       className="admin-text-input"
                       value={answer.text.delta}
                       onChange={(html, delta, source, editor) => {
-                        const value = editedAnswers.find(a => a.id === answer.id);
-                        value.text.delta = editor.getContents();
+                        const v = value.find(a => a.id === answer.id);
+                        v.text.delta = editor.getContents();
 
-                        setEditedAnswers([...editedAnswers]);
+                        onChange([...value]);
                       }}
                     />
                   </IonCol>

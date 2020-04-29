@@ -36,22 +36,10 @@ export class EditQuiz extends Component<
 
   context!: AxiosInstance;
 
-  save(id: string, question: any) {
-    const data = JSON.parse(JSON.stringify(question));
-
-    return this.context.post(`quiz/web-client/question/${id}/edit`, data).then(() => this.getQuestions());
-  }
-
-  close(id?: string, question?: any) {
+  close() {
     this.setState({ isOpen: false });
 
     this.setState({ questionId: null });
-
-    if (id && question) {
-      this.setState({ loadingQuestions: true });
-
-      this.save(id, question);
-    }
   }
 
   editQuestion(question: any) {
@@ -143,8 +131,7 @@ export class EditQuiz extends Component<
             <EditQuestion
               questionId={state.questionId}
               isOpen={state.isOpen}
-              close={(id, question) => this.close(id, question)}
-              save={(id, question) => this.save(id, question)}
+              close={() => this.close()}
             />
           </IonCardContent>
         </IonCard>
