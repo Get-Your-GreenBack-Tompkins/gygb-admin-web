@@ -222,7 +222,7 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
             )}
           </IonRow>
         </IonGrid>
-        <IonGrid>
+        <IonGrid class="edit-question-grid">
           <IonRow>
             <IonCol>
               {page === Page.EditQuestion ? (

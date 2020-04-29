@@ -22,9 +22,9 @@ const Home: React.FC = () => {
       <IonContent className="ion-padding">
         <IonList>
           {emails &&
-            emails.map((x: string) => (
-              <IonItem>
-                {" "}
+            Array.isArray(emails) &&
+            emails.map((x: string, i) => (
+              <IonItem key={i}>
                 <IonLabel> {x} </IonLabel>
               </IonItem>
             ))}

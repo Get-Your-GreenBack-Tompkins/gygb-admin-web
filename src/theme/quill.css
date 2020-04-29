@@ -1,3 +1,7 @@
+.edit-question-grid {
+  margin-bottom: 60px;
+}
+
 .admin-text-input:hover {
   border-bottom: 1px lightgray solid;
 }
