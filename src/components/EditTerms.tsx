@@ -17,8 +17,10 @@ import { ApiContext } from "../api";
 import { parseDelta } from "../util";
 
 import { ToS } from "../types/tos";
+import ErrorContent from "./ErrorContent";
 
 export const EditTerms: React.FC<{}> = () => {
+  const [loadingError, setLoadingError] = useState(false);
   const [loadingToS, setLoadingToS] = useState(false);
   const [tos, setToS] = useState(null as ToS | null);
   const [editedHotshot, setEditedHotshot] = useState(null as QuillDelta | null);
@@ -73,7 +75,10 @@ export const EditTerms: React.FC<{}> = () => {
         setEditedQuiz(parseDelta(res.data.quiz));
         setLoadingToS(false);
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        setLoadingError(true);
+        console.log(err);
+      });
   }, [api]);
 
   useEffect(() => {
@@ -81,6 +86,10 @@ export const EditTerms: React.FC<{}> = () => {
 
     getToS();
   }, [getToS]);
+
+  if (loadingError) {
+    return <ErrorContent name="Terms & Conditions" />;
+  }
 
   if (!tos || !editedQuiz || !editedHotshot) {
     return <IonLoading isOpen={true} message={"Loading Terms of Service..."} duration={0} />;

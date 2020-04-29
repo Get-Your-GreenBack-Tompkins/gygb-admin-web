@@ -1,41 +1,28 @@
 import { IonRowCol } from "./IonRowCol";
-import React, { useEffect, useState } from "react";
+import React, { useCallback } from "react";
 import { IonItem, IonGrid, IonCheckbox, IonText, IonLabel, IonInput } from "@ionic/react";
-import { parseDelta } from "../util";
 
 interface MultiScoreProps {
-  question: any;
-  onEdit: (answers: any[]) => void;
+  value: any[];
+  onChange: (value: any[]) => void;
 }
 
-export const MultiScore: React.FC<MultiScoreProps> = ({ question, onEdit }) => {
-  const [answers, setAnswers] = useState([] as any[]);
-
-  useEffect(() => {
-    setAnswers([
-      ...question.answers.map((a: any) => ({
-        ...a,
-        text: {
-          delta: parseDelta(a.text.delta),
-          sanitized: a.text.sanitized
-        }
-      }))
-    ]);
-  }, [question]);
-
-  useEffect(() => {
-    onEdit([
-      ...answers.map((a: any) => ({
-        ...a,
-        text: JSON.stringify(a.text.delta)
-      }))
-    ]);
-  }, [onEdit, answers]);
+export const MultiScore: React.FC<MultiScoreProps> = ({ value, onChange: $onChange }) => {
+  const onChange = useCallback(
+    (answers: any[]) => {
+      $onChange([
+        ...answers.map((a: any) => ({
+          ...a
+        }))
+      ]);
+    },
+    [$onChange]
+  );
 
   return (
     <IonGrid>
       <IonRowCol>
-        {answers.map((answer: any) => {
+        {value.map((answer: any) => {
           return (
             <div key={answer.id}>
               <IonItem>
@@ -49,10 +36,10 @@ export const MultiScore: React.FC<MultiScoreProps> = ({ question, onEdit }) => {
 
                 <IonCheckbox
                   onIonChange={event => {
-                    const value = answers.find(a => a.id === answer.id);
-                    value.correct = event.detail.checked;
+                    const v = value.find(a => a.id === answer.id);
+                    v.correct = event.detail.checked;
 
-                    setAnswers([...answers]);
+                    onChange([...value]);
                   }}
                   checked={answer.correct}
                   slot="start"
@@ -63,10 +50,10 @@ export const MultiScore: React.FC<MultiScoreProps> = ({ question, onEdit }) => {
                 <IonInput
                   value={answer.message}
                   onIonChange={event => {
-                    const value = answers.find(a => a.id === answer.id);
-                    value.message = event.detail.value;
+                    const v = value.find(a => a.id === answer.id);
+                    v.message = event.detail.value;
 
-                    setAnswers([...answers]);
+                    onChange([...value]);
                   }}
                 ></IonInput>
               </IonItem>

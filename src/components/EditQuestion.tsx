@@ -51,8 +51,7 @@ function constructEdit(
 interface EditQuestionProps {
   isOpen: boolean;
   questionId: string | null;
-  close: (id?: string, question?: any) => void;
-  save: (id: string, question: any) => Promise<void>;
+  close: () => void;
 }
 
 export enum Page {
@@ -60,7 +59,7 @@ export enum Page {
   EditScore = 1
 }
 
-export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, close, save }) => {
+export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, close }) => {
   const [question, setQuestion] = useState();
 
   const [editedHeader, setEditedHeader] = useState(null as null | string);
@@ -75,34 +74,51 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
 
   const api = useContext(ApiContext);
 
+  function saveQuestion(questionId: string) {
+    setSaving(true);
+    const edits = {
+      header: editedHeader,
+      body: JSON.stringify(editedBody),
+      answers: answers.map((a: any) => ({
+        ...a,
+        text: JSON.stringify(a.text.delta)
+      }))
+    };
+
+    const editedQuestion = constructEdit(question, edits);
+
+    const data = JSON.parse(JSON.stringify(editedQuestion));
+
+    return api
+      .post(`quiz/web-client/question/${questionId}/edit`, data)
+      .then(() => {
+        return getQuestion();
+      })
+      .then(() => {
+        setSaving(false);
+      });
+  }
+
   function edit(questionId?: string) {
     if (questionId != null) {
-      const edits = {
-        header: editedHeader,
-        body: JSON.stringify(editedBody),
-        answers
-      };
-
-      close(questionId, constructEdit(question, edits));
+      saveQuestion(questionId).then(() => close());
     } else {
       close();
     }
   }
 
-  function saveQuestion(questionId: string) {
-    const edits = {
-      header: editedHeader,
-      body: JSON.stringify(editedBody),
-      answers
-    };
-
-    return save(questionId, constructEdit(question, edits));
-  }
-
   const getQuestion = useCallback(() => {
     return api.get(`/quiz/web-client/question/${questionId}/edit`).then(res => {
       setQuestion(res.data);
-
+      setAnswers(
+        [...res.data.answers].map((a: any) => ({
+          ...a,
+          text: {
+            ...a.text,
+            delta: parseDelta(a.text.delta)
+          }
+        }))
+      );
       setEditedBody(parseDelta(res.data.body.delta));
       setEditedHeader(res.data.header);
     });
@@ -160,8 +176,31 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
 
   let content;
 
-  if (!question || !questionId || editedHeader == null || editedBody == null) {
-    content = <IonSpinner></IonSpinner>;
+  if (saving || !question || !questionId || editedHeader == null || editedBody == null) {
+    content = (
+      <IonContent>
+        <IonGrid
+          style={{
+            height: "100%",
+            width: "100%"
+          }}
+        >
+          <IonRow
+            style={{
+              height: "100%"
+            }}
+            className="ion-justify-content-center"
+          >
+            <IonCol size="auto" className="ion-align-self-center ion-text-center">
+              <IonText>
+                <h3>{saving ? "Saving Question Content..." : "Loading Question Content..."}</h3>
+              </IonText>
+              <IonSpinner style={{ margin: "auto" }}></IonSpinner>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
+      </IonContent>
+    );
   } else {
     content = (
       <IonContent>
@@ -199,9 +238,9 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
                   onClick={() => {
                     const id = questionId;
 
-                    saveQuestion(id);
-
-                    setPage(page + 1);
+                    saveQuestion(id).then(() => {
+                      setPage(page + 1);
+                    });
                   }}
                 >
                   Next
@@ -282,8 +321,8 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
                         <IonLabel>Answers</IonLabel>
                       </IonItem>
                       <MultiEdit
-                        question={question}
-                        onEdit={setAnswers}
+                        onChange={setAnswers}
+                        value={answers}
                         onDelete={(answerId: string) => deleteAnswer(answerId)}
                       ></MultiEdit>
                     </IonRowCol>
@@ -312,10 +351,7 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
                     </IonRowCol>
                     <IonRow>
                       <IonCol>
-                        <MultiScore
-                          onEdit={setAnswers}
-                          question={question}
-                        ></MultiScore>
+                        <MultiScore onChange={setAnswers} value={answers}></MultiScore>
                       </IonCol>
                     </IonRow>
                   </IonGrid>

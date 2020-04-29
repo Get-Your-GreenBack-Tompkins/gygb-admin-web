@@ -21,6 +21,7 @@ import { ApiContext } from "../api";
 import EditQuestion from "./EditQuestion";
 import { Quiz, Question } from "../types/quiz";
 import { AxiosInstance } from "axios";
+import ErrorContent from "./ErrorContent";
 
 export class EditQuiz extends Component<
   {},
@@ -30,28 +31,17 @@ export class EditQuiz extends Component<
     questionId: string | null;
     editedQuestions: Question[];
     loadingQuestions: boolean;
+    loadingError: boolean;
   }
 > {
   static contextType = ApiContext;
 
   context!: AxiosInstance;
 
-  save(id: string, question: any) {
-    const data = JSON.parse(JSON.stringify(question));
-
-    return this.context.post(`quiz/web-client/question/${id}/edit`, data).then(() => this.getQuestions());
-  }
-
-  close(id?: string, question?: any) {
+  close() {
     this.setState({ isOpen: false });
 
     this.setState({ questionId: null });
-
-    if (id && question) {
-      this.setState({ loadingQuestions: true });
-
-      this.save(id, question);
-    }
   }
 
   editQuestion(question: any) {
@@ -80,7 +70,13 @@ export class EditQuiz extends Component<
           loadingQuestions: false
         });
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        this.setState({
+          loadingError: true,
+          loadingQuestions: false
+        });
+        console.log(err);
+      });
   }
 
   constructor(props: any) {
@@ -91,7 +87,8 @@ export class EditQuiz extends Component<
       quiz: null as Quiz | null,
       questionId: null as string | null,
       editedQuestions: [] as Question[],
-      loadingQuestions: false
+      loadingQuestions: false,
+      loadingError: false
     };
   }
 
@@ -103,6 +100,10 @@ export class EditQuiz extends Component<
 
   render() {
     const { state } = this;
+
+    if (state.loadingError) {
+      return <ErrorContent name="Questions" />;
+    }
 
     if (!state.quiz) {
       return <IonLoading isOpen={true} message={"Loading Quiz Data..."} duration={0} />;
@@ -140,12 +141,7 @@ export class EditQuiz extends Component<
                 </IonItem>
               </IonItemGroup>
             ))}
-            <EditQuestion
-              questionId={state.questionId}
-              isOpen={state.isOpen}
-              close={(id, question) => this.close(id, question)}
-              save={(id, question) => this.save(id, question)}
-            />
+            <EditQuestion questionId={state.questionId} isOpen={state.isOpen} close={() => this.close()} />
           </IonCardContent>
         </IonCard>
       </div>
