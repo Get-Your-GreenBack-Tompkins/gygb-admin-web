@@ -1,21 +1,35 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel } from "@ionic/react";
-import React, { useContext } from "react";
+import React, { useContext, useCallback, useEffect } from "react";
 import { useState } from "react";
 
 import { ApiContext } from "../api";
+import ErrorContent from "../components/ErrorContent";
 
 const Home: React.FC = () => {
   const [emails, setEmails] = useState();
+  const [loadingError, setLoadingError] = useState(false);
 
   const api = useContext(ApiContext);
 
-  const getEmails = () => {
+  const getEmails = useCallback(() => {
     if (!emails) {
-      api.get("/user/emails/marketing/").then(res => setEmails(res.data.emailList));
+      api
+        .get("/user/emails/marketing/")
+        .then(res => setEmails(res.data.emailList))
+        .catch(err => {
+          setLoadingError(true);
+          console.log(err);
+        });
     }
-  };
+  }, [api]);
 
-  getEmails();
+  useEffect(() => {
+    getEmails();
+  }, [getEmails]);
+
+  if (loadingError) {
+    return <ErrorContent name="Email List" />;
+  }
 
   return (
     <IonPage>

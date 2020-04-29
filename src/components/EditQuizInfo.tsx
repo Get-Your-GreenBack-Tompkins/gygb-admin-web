@@ -18,9 +18,11 @@ import ReactQuill from "react-quill";
 
 import { ApiContext } from "../api";
 import { parseDelta } from "../util";
+import ErrorContent from "./ErrorContent";
 
 export const EditQuizInfo: React.FC<{}> = () => {
   const [loadingInfo, setLoadingInfo] = useState(false);
+  const [loadingError, setLoadingError] = useState(false);
   const [tutorial, setTutorial] = useState(null as QuillDelta | null);
   const [tutorialHeader, setTutorialHeader] = useState(null as string | null);
   const [questionCount, setQuestionCount] = useState(null as string | null);
@@ -78,6 +80,7 @@ export const EditQuizInfo: React.FC<{}> = () => {
       })
       .catch(err => {
         setLoadingInfo(false);
+        setLoadingError(true);
         console.log(err);
       });
   }, [api]);
@@ -87,6 +90,10 @@ export const EditQuizInfo: React.FC<{}> = () => {
 
     getInfo();
   }, [getInfo]);
+
+  if (loadingError) {
+    return <ErrorContent name="Quiz Info" />;
+  }
 
   if (!tutorial || tutorialHeader == null || name == null || questionCount == null) {
     return <IonLoading isOpen={true} message={"Loading Quiz Info..."} duration={0} />;

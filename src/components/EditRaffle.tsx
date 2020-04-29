@@ -16,10 +16,11 @@ import {
 import React, { useState, useContext, useEffect, useCallback } from "react";
 
 import { ApiContext } from "../api";
+import ErrorContent from "./ErrorContent";
 
 export const EditRaffle: React.FC<{}> = () => {
   const [loadingInfo, setLoadingInfo] = useState(false);
-
+  const [loadingError, setLoadingError] = useState(true);
   const [isRaffle, setIsRaffle] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [prize, setPrize] = useState(null as string | null);
@@ -74,7 +75,10 @@ export const EditRaffle: React.FC<{}> = () => {
       .catch(err => {
         if (err.response && err.response.status === 404) {
           setIsRaffle(false);
+        } else {
+          setLoadingError(true);
         }
+
         setLoadingInfo(false);
         console.log(err);
       });
@@ -85,6 +89,10 @@ export const EditRaffle: React.FC<{}> = () => {
 
     getInfo();
   }, [getInfo, isRaffle]);
+
+  if (loadingError) {
+    return <ErrorContent name="Raffle" />;
+  }
 
   if (isRaffle && (prize == null || questionRequirement == null)) {
     return <IonLoading isOpen={true} message={"Loading Raffle Info..."} duration={0} />;
