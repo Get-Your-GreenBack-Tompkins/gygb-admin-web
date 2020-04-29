@@ -12,15 +12,13 @@ const Home: React.FC = () => {
   const api = useContext(ApiContext);
 
   const getEmails = useCallback(() => {
-    if (!emails) {
-      api
-        .get("/user/emails/marketing/")
-        .then(res => setEmails(res.data.emailList))
-        .catch(err => {
-          setLoadingError(true);
-          console.log(err);
-        });
-    }
+    api
+      .get("/user/emails/marketing/")
+      .then(res => setEmails(res.data.emailList))
+      .catch(err => {
+        setLoadingError(true);
+        console.log(err);
+      });
   }, [api]);
 
   useEffect(() => {
