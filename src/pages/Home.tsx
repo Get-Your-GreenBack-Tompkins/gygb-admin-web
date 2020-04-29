@@ -15,12 +15,13 @@ import {
 } from "@ionic/react";
 import React from "react";
 
-import { mail, create } from "ionicons/icons";
+import { mail, create, cube, document, help } from "ionicons/icons";
 
 import Emails from "./Emails";
 import Questions from "./Quiz";
 import Quiz from "./QuizInfo";
 import ToS from "./TermsOfService";
+import Raffle from "./CurrentRaffle";
 
 import firebase from "firebase";
 
@@ -52,16 +53,20 @@ const Home: React.FC = () => {
                   <IonLabel>Edit Quiz</IonLabel>
                 </IonItem>
                 <IonItem routerLink="/questions">
-                  <IonIcon icon={create} slot="start"></IonIcon>
+                  <IonIcon icon={help} slot="start"></IonIcon>
                   <IonLabel>Edit Questions</IonLabel>
                 </IonItem>
                 <IonItem routerLink="/tos">
-                  <IonIcon icon={create} slot="start"></IonIcon>
+                  <IonIcon icon={document} slot="start"></IonIcon>
                   <IonLabel>Edit Terms of Service</IonLabel>
                 </IonItem>
                 <IonItem routerLink="/emails">
                   <IonIcon icon={mail} slot="start"></IonIcon>
                   <IonLabel>Email List</IonLabel>
+                </IonItem>
+                <IonItem routerLink="/raffle">
+                  <IonIcon icon={cube} slot="start"></IonIcon>
+                  <IonLabel>Current Raffle</IonLabel>
                 </IonItem>
               </IonList>
             </IonContent>
@@ -72,6 +77,7 @@ const Home: React.FC = () => {
               <Route path="/questions" component={Questions} />
               <Route path="/quiz" component={Quiz} />
               <Route path="/tos" component={ToS} />
+              <Route path="/raffle" component={Raffle} />
             </IonRouterOutlet>
           </IonPage>
         </IonSplitPane>
