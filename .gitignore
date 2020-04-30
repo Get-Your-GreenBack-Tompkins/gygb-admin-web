@@ -23,5 +23,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+.runtimeconfig.json
+
 # local ssl certs
 server.*
