@@ -15,13 +15,14 @@ import {
 } from "@ionic/react";
 import React from "react";
 
-import { mail, create, cube, document, help } from "ionicons/icons";
+import { mail, create, cube, document, help, personAdd } from "ionicons/icons";
 
 import Emails from "./Emails";
 import Questions from "./Quiz";
 import Quiz from "./QuizInfo";
 import ToS from "./TermsOfService";
 import Raffle from "./CurrentRaffle";
+import Admins from "./Admins";
 
 import firebase from "firebase";
 
@@ -68,6 +69,10 @@ const Home: React.FC = () => {
                   <IonIcon icon={cube} slot="start"></IonIcon>
                   <IonLabel>Current Raffle</IonLabel>
                 </IonItem>
+                <IonItem routerLink="/admin">
+                  <IonIcon icon={personAdd} slot="start"></IonIcon>
+                  <IonLabel>Admin Access</IonLabel>
+                </IonItem>
               </IonList>
             </IonContent>
           </IonMenu>
@@ -78,6 +83,7 @@ const Home: React.FC = () => {
               <Route path="/quiz" component={Quiz} />
               <Route path="/tos" component={ToS} />
               <Route path="/raffle" component={Raffle} />
+              <Route path="/admin" component={Admins} />
             </IonRouterOutlet>
           </IonPage>
         </IonSplitPane>

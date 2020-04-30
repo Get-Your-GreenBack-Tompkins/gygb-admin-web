@@ -67,6 +67,8 @@ export const EditTerms: React.FC<{}> = () => {
   }
 
   const getToS = useCallback(() => {
+    setLoadingError(false);
+
     api
       .get(`tos/edit`)
       .then(res => {
@@ -88,7 +90,7 @@ export const EditTerms: React.FC<{}> = () => {
   }, [getToS]);
 
   if (loadingError) {
-    return <ErrorContent name="Terms & Conditions" />;
+    return <ErrorContent name="Terms & Conditions" reload={getToS} />;
   }
 
   if (!tos || !editedQuiz || !editedHotshot) {

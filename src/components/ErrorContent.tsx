@@ -1,9 +1,10 @@
 import React from "react";
-import { IonRow, IonGrid, IonContent, IonCol } from "@ionic/react";
+import { IonRow, IonGrid, IonContent, IonCol, IonButton } from "@ionic/react";
 
 export const ErrorContent: React.FC<{
   name: string;
-}> = ({ name }) => {
+  reload?: () => void;
+}> = ({ name, reload }) => {
   return (
     <IonContent>
       <IonGrid>
@@ -13,6 +14,15 @@ export const ErrorContent: React.FC<{
             server is running.
           </IonCol>
         </IonRow>
+        {reload ? (
+          <IonRow>
+            <IonCol>
+              <IonButton onClick={reload}>Reload Page</IonButton>
+            </IonCol>
+          </IonRow>
+        ) : (
+          <></>
+        )}
       </IonGrid>
     </IonContent>
   );

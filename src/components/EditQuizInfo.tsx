@@ -69,6 +69,8 @@ export const EditQuizInfo: React.FC<{}> = () => {
   }
 
   const getInfo = useCallback(() => {
+    setLoadingError(false);
+
     api
       .get(`quiz/web-client/edit`)
       .then(res => {
@@ -92,7 +94,7 @@ export const EditQuizInfo: React.FC<{}> = () => {
   }, [getInfo]);
 
   if (loadingError) {
-    return <ErrorContent name="Quiz Info" />;
+    return <ErrorContent name="Quiz Info" reload={getInfo} />;
   }
 
   if (!tutorial || tutorialHeader == null || name == null || questionCount == null) {

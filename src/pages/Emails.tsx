@@ -5,13 +5,15 @@ import { useState } from "react";
 import { ApiContext } from "../api";
 import ErrorContent from "../components/ErrorContent";
 
-const Home: React.FC = () => {
+const Emails: React.FC = () => {
   const [emails, setEmails] = useState();
   const [loadingError, setLoadingError] = useState(false);
 
   const api = useContext(ApiContext);
 
   const getEmails = useCallback(() => {
+    setLoadingError(false);
+
     api
       .get("/user/emails/marketing/")
       .then(res => setEmails(res.data.emailList))
@@ -26,7 +28,7 @@ const Home: React.FC = () => {
   }, [getEmails]);
 
   if (loadingError) {
-    return <ErrorContent name="Email List" />;
+    return <ErrorContent name="Email List" reload={getEmails} />;
   }
 
   return (
@@ -46,4 +48,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Emails;
