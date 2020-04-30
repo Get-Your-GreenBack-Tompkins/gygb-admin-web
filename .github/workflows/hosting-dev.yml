@@ -22,8 +22,6 @@ jobs:
       run: npm install
     - name: NPM Build
       run: npm run build
-    - name: NPM Install (functions)
-      run: cd $GITHUB_WORKSPACE/functions && npm install && cd $GITHUB_WORKSPACE/
     - name: Archive Development Build
       uses: actions/upload-artifact@master
       with:
