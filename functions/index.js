@@ -56,10 +56,10 @@ const getRaffle = async (id) => {
     const wb = XLSX.utils.book_new();
     wb.SheetNames.push("Raffle");
     raffleSheet = [];
-    raffleSheet.push(['First Name', 'Last Name', 'Email']);
+    raffleSheet.push(['First Name', 'Last Name', 'Email', 'Winner']);
     raffles.docs.forEach(doc => {
       const data = doc.data();
-      raffleSheet.push([data.firstName, data.lastName, data.email]);
+      raffleSheet.push([data.firstName, data.lastName, data.email, data.winner || ""]);
     });
     const raffleWS = XLSX.utils.aoa_to_sheet(raffleSheet);
     wb.Sheets["Raffle"] = raffleWS;

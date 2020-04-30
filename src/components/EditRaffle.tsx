@@ -11,22 +11,57 @@ import {
   IonInput,
   IonModal,
   IonLabel,
-  IonText
+  IonText,
+  IonListHeader,
+  IonIcon
 } from "@ionic/react";
 import React, { useState, useContext, useEffect, useCallback } from "react";
+import firebase from "firebase/app";
 
 import { ApiContext } from "../api";
 import ErrorContent from "./ErrorContent";
+import { download, trophy } from "ionicons/icons";
 
 export const EditRaffle: React.FC<{}> = () => {
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [loadingError, setLoadingError] = useState(false);
   const [isRaffle, setIsRaffle] = useState(true);
+  const [allRaffles, setAllRaffles] = useState([] as any[]);
   const [openModal, setOpenModal] = useState(false);
   const [prize, setPrize] = useState(null as string | null);
   const [questionRequirement, setQuestionRequirement] = useState(null as string | null);
 
   const api = useContext(ApiContext);
+
+  const getAllRaffles = useCallback(() => {
+    api.get(`quiz/web-client/raffle/list`).then(res => {
+      setAllRaffles(res.data.raffles);
+    });
+  }, [api]);
+
+  function drawWinner() {
+    api
+      .get(`quiz/web-client/raffle/winner`)
+      .then(_ => {
+        return getAllRaffles();
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  function downloadRaffle(id: string) {
+    const callable = firebase.functions().httpsCallable("raffle");
+    callable({
+      id
+    })
+      .then(result => {
+        const url = result.data;
+
+        window.open(url);
+      })
+      .catch(err => console.log(err));
+  }
 
   function newRaffle() {
     setLoadingInfo(true);
@@ -49,7 +84,7 @@ export const EditRaffle: React.FC<{}> = () => {
     };
 
     api
-      .put(`quiz/web-client/raffle`, edit)
+      .put(`quiz/web-client/raffle/edit`, edit)
       .then(() => {
         setLoadingInfo(false);
         setIsRaffle(true);
@@ -62,6 +97,10 @@ export const EditRaffle: React.FC<{}> = () => {
         console.log(err);
       });
   }
+
+  useEffect(() => {
+    getAllRaffles();
+  }, [getAllRaffles]);
 
   const getInfo = useCallback(() => {
     setLoadingError(false);
@@ -150,11 +189,7 @@ export const EditRaffle: React.FC<{}> = () => {
         {isRaffle ? (
           <>
             <IonList>
-              <IonItem>
-                <IonLabel>
-                  <h2>Current Raffle</h2>
-                </IonLabel>
-              </IonItem>
+              <IonListHeader>Current Raffle</IonListHeader>
               <IonItem>
                 <IonLabel>
                   <b>Prize</b>
@@ -189,6 +224,52 @@ export const EditRaffle: React.FC<{}> = () => {
             </IonGrid>
           </>
         )}
+        <IonList>
+          <IonListHeader>All Raffles</IonListHeader>
+          {allRaffles.map((r, i) => {
+            console.log(r);
+            return (
+              <div key={i}>
+                <IonItem>
+                  <IonLabel>
+                    <b>
+                      {new Date(r.month).toLocaleDateString(undefined, {
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "UTC"
+                      })}
+                    </b>
+                  </IonLabel>
+
+                  {r.winner ? (
+                    <IonLabel>
+                      <b>Winner:</b> {r.winner.firstName} {r.winner.lastName} ({r.winner.email})
+                    </IonLabel>
+                  ) : (
+                    <></>
+                  )}
+
+                  <IonButton
+                    onClick={() => {
+                      drawWinner();
+                    }}
+                  >
+                    <IonIcon icon={trophy}></IonIcon>
+                    Draw Winner
+                  </IonButton>
+                  <IonButton
+                    onClick={() => {
+                      downloadRaffle(r.id);
+                    }}
+                  >
+                    <IonIcon icon={download}></IonIcon>
+                    Download
+                  </IonButton>
+                </IonItem>
+              </div>
+            );
+          })}
+        </IonList>
       </IonContent>
     </>
   );
