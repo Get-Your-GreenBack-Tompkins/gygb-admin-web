@@ -84,7 +84,7 @@ export const EditRaffle: React.FC<{}> = () => {
     };
 
     api
-      .put(`quiz/web-client/raffle/edit`, edit)
+      .put(`quiz/web-client/raffle/`, edit)
       .then(() => {
         setLoadingInfo(false);
         setIsRaffle(true);
