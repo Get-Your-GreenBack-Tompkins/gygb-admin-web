@@ -39,7 +39,6 @@ const Emails: React.FC = () => {
 
   const downloadSpreadsheet = () => {
     const callable = firebase.functions().httpsCallable("marketingSpreadsheet");
-    // firebase.functions().useFunctionsEmulator("http://localhost:5000")
     callable({})
       .then(result => {
         const url = result.data;
