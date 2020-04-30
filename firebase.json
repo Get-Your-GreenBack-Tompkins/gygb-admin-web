@@ -11,6 +11,14 @@
       {
         "source": "**",
         "destination": "/index.html"
+      },
+      {
+        "source": "/emails",
+        "function": "marketingSpreadsheet"
+      },
+      {
+        "source": "/raffle",
+        "function": "raffleSpreadsheet"
       }
     ]
   },

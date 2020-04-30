@@ -2,6 +2,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions');
 const { Storage } = require('@google-cloud/storage');
 const XLSX = require('xlsx');
+const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 
