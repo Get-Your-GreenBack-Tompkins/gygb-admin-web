@@ -1,45 +1,63 @@
 import { IonRowCol } from "./IonRowCol";
-import React, { useEffect, useState } from "react";
-import { IonItem, IonGrid, IonCheckbox, IonText } from "@ionic/react";
+import React, { useCallback } from "react";
+import { IonItem, IonGrid, IonCheckbox, IonText, IonLabel, IonInput } from "@ionic/react";
 
 interface MultiScoreProps {
-  question: any;
-  onEdit: (answers: any[]) => void;
+  value: any[];
+  onChange: (value: any[]) => void;
 }
 
-export const MultiScore: React.FC<MultiScoreProps> = ({ question }) => {
-  const [answers, setAnswers] = useState([] as any[]);
-
-  useEffect(() => {
-    setAnswers([...question.answers]);
-  }, [question]);
+export const MultiScore: React.FC<MultiScoreProps> = ({ value, onChange: $onChange }) => {
+  const onChange = useCallback(
+    (answers: any[]) => {
+      $onChange([
+        ...answers.map((a: any) => ({
+          ...a
+        }))
+      ]);
+    },
+    [$onChange]
+  );
 
   return (
     <IonGrid>
       <IonRowCol>
-        {answers.map((answer: any) => {
-          console.log(answer);
+        {value.map((answer: any) => {
           return (
-            <IonItem key={answer.id}>
-              <IonText>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: answer.text.sanitized
+            <div key={answer.id}>
+              <IonItem>
+                <IonText>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: answer.text.sanitized
+                    }}
+                  ></div>
+                </IonText>
+
+                <IonCheckbox
+                  onIonChange={event => {
+                    const v = value.find(a => a.id === answer.id);
+                    v.correct = event.detail.checked;
+
+                    onChange([...value]);
                   }}
-                ></div>
-              </IonText>
+                  checked={answer.correct}
+                  slot="start"
+                ></IonCheckbox>
+              </IonItem>
+              <IonItem>
+                <IonLabel>Reasoning</IonLabel>
+                <IonInput
+                  value={answer.message}
+                  onIonChange={event => {
+                    const v = value.find(a => a.id === answer.id);
+                    v.message = event.detail.value;
 
-              <IonCheckbox
-                onIonChange={event => {
-                  const value = answers.find(a => a.id === answer.id);
-                  value.correct = event.detail.checked;
-
-                  setAnswers([...answers]);
-                }}
-                checked={answer.correct}
-                slot="start"
-              ></IonCheckbox>
-            </IonItem>
+                    onChange([...value]);
+                  }}
+                ></IonInput>
+              </IonItem>
+            </div>
           );
         })}
       </IonRowCol>

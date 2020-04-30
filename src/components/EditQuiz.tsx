@@ -2,8 +2,6 @@ import {
   IonIcon,
   IonButton,
   IonButtons,
-  IonReorder,
-  IonReorderGroup,
   IonItem,
   IonLabel,
   IonCardContent,
@@ -11,18 +9,19 @@ import {
   IonCardHeader,
   IonItemDivider,
   IonItemGroup,
-  IonFab,
-  IonFabButton,
   IonProgressBar,
-  IonLoading
+  IonLoading,
+  IonList
 } from "@ionic/react";
-import { ItemReorderEventDetail } from "@ionic/core";
-import React, { useState, useEffect, Component } from "react";
-import { add, create, trash } from "ionicons/icons";
+import React, { Component } from "react";
+import { create, trash } from "ionicons/icons";
 
-import api from "../api";
+import { ApiContext } from "../api";
+
 import EditQuestion from "./EditQuestion";
 import { Quiz, Question } from "../types/quiz";
+import { AxiosInstance } from "axios";
+import ErrorContent from "./ErrorContent";
 
 export class EditQuiz extends Component<
   {},
@@ -32,43 +31,17 @@ export class EditQuiz extends Component<
     questionId: string | null;
     editedQuestions: Question[];
     loadingQuestions: boolean;
+    loadingError: boolean;
   }
 > {
-  doReorder(event: CustomEvent<ItemReorderEventDetail>) {
-    const { state } = this;
+  static contextType = ApiContext;
 
-    const index = event.detail.to;
-    const [removed] = state.editedQuestions.splice(event.detail.from, 1);
+  context!: AxiosInstance;
 
-    this.setState({
-      editedQuestions: [
-        ...state.editedQuestions.slice(0, index),
-        removed,
-        ...state.editedQuestions.slice(index)
-      ]
-    });
-
-    event.detail.complete();
-  }
-
-  save(id: string, question: any) {
-    const data = JSON.parse(JSON.stringify(question));
-
-    return api
-      .post(`quiz/web-client/question/${id}/edit`, data)
-      .then(() => this.getQuestions());
-  }
-
-  close(id?: string, question?: any) {
-    this.setState({ isOpen: false });
-
-    this.setState({ questionId: null });
-
-    if (id && question) {
-      this.setState({ loadingQuestions: true });
-
-      this.save(id, question);
-    }
+  close() {
+    this.setState({ isOpen: false, questionId: null });
+    
+    this.getQuestions();
   }
 
   editQuestion(question: any) {
@@ -76,22 +49,21 @@ export class EditQuiz extends Component<
   }
 
   addQuestion() {
-    api.put(`quiz/web-client/question/`).then(() => this.getQuestions());
+    this.context.put(`quiz/web-client/question/`).then(() => this.getQuestions());
   }
 
   deleteQuestion(question: any) {
-    api
-      .delete(`quiz/web-client/question/${question.id}`)
-      .then(() => this.getQuestions());
+    this.context.delete(`quiz/web-client/question/${question.id}`).then(() => this.getQuestions());
   }
 
   getQuestions() {
     this.setState({
-      loadingQuestions: true
+      loadingQuestions: true,
+      loadingError: false
     });
 
-    return api
-      .get(`quiz/web-client`)
+    return this.context
+      .get(`quiz/web-client/edit`)
       .then(res => {
         this.setState({
           quiz: res.data,
@@ -99,7 +71,13 @@ export class EditQuiz extends Component<
           loadingQuestions: false
         });
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        this.setState({
+          loadingError: true,
+          loadingQuestions: false
+        });
+        console.log(err);
+      });
   }
 
   constructor(props: any) {
@@ -110,7 +88,8 @@ export class EditQuiz extends Component<
       quiz: null as Quiz | null,
       questionId: null as string | null,
       editedQuestions: [] as Question[],
-      loadingQuestions: false
+      loadingQuestions: false,
+      loadingError: false
     };
   }
 
@@ -123,14 +102,12 @@ export class EditQuiz extends Component<
   render() {
     const { state } = this;
 
+    if (state.loadingError) {
+      return <ErrorContent name="Questions" reload={this.getQuestions} />;
+    }
+
     if (!state.quiz) {
-      return (
-        <IonLoading
-          isOpen={true}
-          message={"Loading Quiz Data..."}
-          duration={0}
-        />
-      );
+      return <IonLoading isOpen={true} message={"Loading Quiz Data..."} duration={0} />;
     }
 
     return (
@@ -138,48 +115,34 @@ export class EditQuiz extends Component<
         {state.loadingQuestions ? (
           <IonProgressBar type="indeterminate" reversed={true}></IonProgressBar>
         ) : null}
-
+        <IonList></IonList>
         <IonCard>
           <IonCardHeader>
             <IonLabel>{state.quiz.name}</IonLabel>
           </IonCardHeader>
           <IonCardContent>
-            <IonReorderGroup disabled={false} onIonItemReorder={this.doReorder}>
-              {state.editedQuestions.map((q: any, i: number) => (
-                <IonItemGroup key={q.id}>
-                  <IonItemDivider>
-                    <IonLabel>{`Question ${i + 1}`}</IonLabel>
-                  </IonItemDivider>
-                  <IonItem lines="none">
-                    <IonReorder slot="start" />
-                    <IonLabel>
-                      <div dangerouslySetInnerHTML={{ __html: q.header }}></div>
-                    </IonLabel>
+            {state.editedQuestions.map((q: any, i: number) => (
+              <IonItemGroup key={q.id}>
+                <IonItemDivider>
+                  <IonLabel>{`Question ${i + 1}`}</IonLabel>
+                </IonItemDivider>
+                <IonItem lines="none">
+                  <IonLabel>
+                    <div dangerouslySetInnerHTML={{ __html: q.header }}></div>
+                  </IonLabel>
 
-                    <IonButtons slot="end">
-                      <IonButton
-                        onClick={() => this.editQuestion(q)}
-                        fill="clear"
-                      >
-                        <IonIcon icon={create}></IonIcon>
-                      </IonButton>
-                      <IonButton
-                        onClick={() => this.deleteQuestion(q)}
-                        color="danger"
-                      >
-                        <IonIcon icon={trash}></IonIcon>
-                      </IonButton>
-                    </IonButtons>
-                  </IonItem>
-                </IonItemGroup>
-              ))}
-              <EditQuestion
-                questionId={state.questionId}
-                isOpen={state.isOpen}
-                close={(id, question) => this.close(id, question)}
-                save={(id, question) => this.save(id, question)}
-              />
-            </IonReorderGroup>
+                  <IonButtons slot="end">
+                    <IonButton onClick={() => this.editQuestion(q)} fill="clear">
+                      <IonIcon icon={create}></IonIcon>
+                    </IonButton>
+                    <IonButton onClick={() => this.deleteQuestion(q)} color="danger">
+                      <IonIcon icon={trash}></IonIcon>
+                    </IonButton>
+                  </IonButtons>
+                </IonItem>
+              </IonItemGroup>
+            ))}
+            <EditQuestion questionId={state.questionId} isOpen={state.isOpen} close={() => this.close()} />
           </IonCardContent>
         </IonCard>
       </div>

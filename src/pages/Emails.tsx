@@ -1,44 +1,86 @@
 import {
   IonContent,
-  IonHeader,
   IonPage,
-  IonTitle,
-  IonToolbar,
   IonList,
   IonItem,
-  IonLabel
+  IonLabel,
+  IonCard,
+  IonCardContent,
+  IonButton,
+  IonIcon,
+  IonCardHeader,
+  IonCardTitle
 } from "@ionic/react";
-import React from "react";
-import { useState } from "react";
+import React, { useContext, useCallback, useEffect, useState } from "react";
+import firebase from "firebase/app";
 
-import api from "../api";
+import { download } from "ionicons/icons";
 
-const Home: React.FC = () => {
+import { ApiContext } from "../api";
+import ErrorContent from "../components/ErrorContent";
+
+const Emails: React.FC = () => {
   const [emails, setEmails] = useState();
+  const [loadingError, setLoadingError] = useState(false);
 
-  const getEmails = () => {
-    if (!emails) {
-      api
-        .get("/user/emails/marketing/")
-        .then(res => setEmails(res.data.emailList));
-    }
+  const api = useContext(ApiContext);
+
+  const getEmails = useCallback(() => {
+    setLoadingError(false);
+
+    api
+      .get("/user/emails/marketing/")
+      .then(res => setEmails(res.data.emailList))
+      .catch(err => {
+        setLoadingError(true);
+        console.log(err);
+      });
+  }, [api]);
+
+  const downloadSpreadsheet = () => {
+    const callable = firebase.functions().httpsCallable("marketing");
+    callable({})
+      .then(result => {
+        const url = result.data;
+
+        window.open(url);
+      })
+      .catch(err => console.log(err));
   };
 
-  getEmails();
+  useEffect(() => {
+    getEmails();
+  }, [getEmails]);
+
+  if (loadingError) {
+    return <ErrorContent name="Email List" reload={getEmails} />;
+  }
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Get Your Greenback Tompkins</IonTitle>
-        </IonToolbar>
-      </IonHeader>
       <IonContent className="ion-padding">
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Email List Download</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>Download the entire marketing email list here!</IonCardContent>
+          <IonItem>
+            <IonButton
+              onClick={() => {
+                downloadSpreadsheet();
+              }}
+              fill="outline"
+            >
+              <IonLabel>Download</IonLabel>
+              <IonIcon slot="start" icon={download}></IonIcon>
+            </IonButton>
+          </IonItem>
+        </IonCard>
         <IonList>
           {emails &&
-            emails.map((x: string) => (
-              <IonItem>
-                {" "}
+            Array.isArray(emails) &&
+            emails.map((x: string, i) => (
+              <IonItem key={i}>
                 <IonLabel> {x} </IonLabel>
               </IonItem>
             ))}
@@ -48,4 +90,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Emails;

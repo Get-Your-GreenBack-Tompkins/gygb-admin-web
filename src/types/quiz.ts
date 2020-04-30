@@ -8,5 +8,6 @@ export interface Question {
 
 export interface Quiz {
   name: string;
+  questionCount: number;
   questions: Question[];
 }
