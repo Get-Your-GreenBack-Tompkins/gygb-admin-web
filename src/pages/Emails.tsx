@@ -1,6 +1,20 @@
-import { IonContent, IonPage, IonList, IonItem, IonLabel } from "@ionic/react";
-import React, { useContext, useCallback, useEffect } from "react";
-import { useState } from "react";
+import {
+  IonContent,
+  IonPage,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonCard,
+  IonCardContent,
+  IonButton,
+  IonIcon,
+  IonCardHeader,
+  IonCardTitle
+} from "@ionic/react";
+import React, { useContext, useCallback, useEffect, useState } from "react";
+import firebase from "firebase/app";
+
+import { download } from "ionicons/icons";
 
 import { ApiContext } from "../api";
 import ErrorContent from "../components/ErrorContent";
@@ -23,6 +37,18 @@ const Emails: React.FC = () => {
       });
   }, [api]);
 
+  const downloadSpreadsheet = () => {
+    const callable = firebase.functions().httpsCallable("marketingSpreadsheet", {});
+
+    callable({})
+      .then(result => {
+        const url = result.data;
+
+        window.open(url);
+      })
+      .catch(err => console.log(err));
+  };
+
   useEffect(() => {
     getEmails();
   }, [getEmails]);
@@ -34,6 +60,23 @@ const Emails: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="ion-padding">
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>Email List Download</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>Download the entire marketing email list here!</IonCardContent>
+          <IonItem>
+            <IonButton
+              onClick={() => {
+                downloadSpreadsheet();
+              }}
+              fill="outline"
+            >
+              <IonLabel>Download</IonLabel>
+              <IonIcon slot="start" icon={download}></IonIcon>
+            </IonButton>
+          </IonItem>
+        </IonCard>
         <IonList>
           {emails &&
             Array.isArray(emails) &&
