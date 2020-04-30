@@ -157,11 +157,16 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
 
       setAnswers([...answers]);
     }
-    saveQuestion(id)
-      .then(() => api.delete(`/quiz/web-client/question/${questionId}/answer/${id}`))
-      .then(() => getQuestion())
-      .catch(() => getQuestion())
-      .finally(() => setSaving(false));
+
+    if (questionId) {
+      saveQuestion(questionId)
+        .then(() => api.delete(`/quiz/web-client/question/${questionId}/answer/${id}`))
+        .then(() => getQuestion())
+        .catch(() => getQuestion())
+        .finally(() => setSaving(false));
+    } else {
+      setSaving(false);
+    }
   }
 
   useEffect(() => {
