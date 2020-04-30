@@ -38,8 +38,8 @@ const Emails: React.FC = () => {
   }, [api]);
 
   const downloadSpreadsheet = () => {
-    const callable = firebase.functions().httpsCallable("marketingSpreadsheet", {});
-
+    const callable = firebase.functions().httpsCallable("marketingSpreadsheet");
+    // firebase.functions().useFunctionsEmulator("http://localhost:5000")
     callable({})
       .then(result => {
         const url = result.data;
