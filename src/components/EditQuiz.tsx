@@ -58,7 +58,8 @@ export class EditQuiz extends Component<
 
   getQuestions() {
     this.setState({
-      loadingQuestions: true
+      loadingQuestions: true,
+      loadingError: false
     });
 
     return this.context
@@ -102,7 +103,7 @@ export class EditQuiz extends Component<
     const { state } = this;
 
     if (state.loadingError) {
-      return <ErrorContent name="Questions" />;
+      return <ErrorContent name="Questions" reload={this.getQuestions} />;
     }
 
     if (!state.quiz) {

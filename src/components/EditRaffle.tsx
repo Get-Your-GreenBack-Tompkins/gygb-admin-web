@@ -64,6 +64,8 @@ export const EditRaffle: React.FC<{}> = () => {
   }
 
   const getInfo = useCallback(() => {
+    setLoadingError(false);
+
     api
       .get(`quiz/web-client/raffle`)
       .then(res => {
@@ -91,7 +93,7 @@ export const EditRaffle: React.FC<{}> = () => {
   }, [getInfo, isRaffle]);
 
   if (loadingError) {
-    return <ErrorContent name="Raffle" />;
+    return <ErrorContent name="Raffle" reload={getInfo} />;
   }
 
   if (isRaffle && (prize == null || questionRequirement == null)) {
