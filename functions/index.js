@@ -10,7 +10,6 @@ const db = admin.firestore();
 
 const getUsers = async () => {
   try {
-    console.log('GET USERS CALLED');
     const users = db.collection('users');
     const marketableUsers = users.where('marketingConsent', '==', true);
     const finalUsers = await marketableUsers.get();
@@ -43,10 +42,8 @@ const getUsers = async () => {
 };
 
 exports.marketing = functions.https.onCall((data, context) => {
-  console.log('FUNCTION CALLED');
   if (context.auth.token.admin === true) {
-    console.log('GET USERS');
-    return getUsers().catch(error => console.log(error));
+    return getUsers();
   }
   else {
     throw new functions.https.HttpsError('failed-precondition', 'The function must be authenticated.');
