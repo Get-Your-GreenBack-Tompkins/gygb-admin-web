@@ -8,75 +8,91 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
-getUsers = async () => {
-  const users = db.collection('users');
-  const marketableUsers = users.where('marketingConsent', '==', true);
-  const finalUsers = await marketableUsers.get();
-  const wb = XLSX.utils.book_new();
-  wb.SheetNames.push('Marketing');
-  marketingSheet = [];
-  marketingSheet.push(['Email', 'Source', 'Time']);
-  finalUsers.docs.forEach(doc => {
-    const timeCreated = new Date(doc.createTime.seconds * 1000);
-    const data = doc.data();
-    marketingSheet.push([data.email, data.sources[0], timeCreated.toLocaleString()])
-  });
-  const marketingWS = XLSX.utils.aoa_to_sheet(marketingSheet);
-  wb.Sheets["Marketing"] = marketingWS;
-  const storage = new Storage();
-  const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
-  const bucket = storage.bucket(functions.config().config.bucket);
-  const file = bucket.file('marketing.xlsx');
-  await file.save(buffer);
-  const config = {
-    version: 'v2',
-    action: 'read',
-    expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
-  };
-  const [url] = await file.getSignedUrl(config);
-  return url;
+const getUsers = async () => {
+  try {
+    console.log('GET USERS CALLED');
+    const users = db.collection('users');
+    const marketableUsers = users.where('marketingConsent', '==', true);
+    const finalUsers = await marketableUsers.get();
+    const wb = XLSX.utils.book_new();
+    wb.SheetNames.push('Marketing');
+    marketingSheet = [];
+    marketingSheet.push(['Email', 'Source', 'Time']);
+    finalUsers.docs.forEach(doc => {
+      const timeCreated = new Date(doc.createTime.seconds * 1000);
+      const data = doc.data();
+      marketingSheet.push([data.email, data.sources[0], timeCreated.toLocaleString()])
+    });
+    const marketingWS = XLSX.utils.aoa_to_sheet(marketingSheet);
+    wb.Sheets["Marketing"] = marketingWS;
+    const storage = new Storage();
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+    const bucket = storage.bucket(functions.config().config.bucket);
+    const file = bucket.file('marketing.xlsx');
+    await file.save(buffer);
+    const config = {
+      version: 'v2',
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+    };
+    const [url] = await file.getSignedUrl(config);
+    return url;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-exports.marketingSpreadsheet = functions.https.onCall((data, context) => {
+exports.marketing = functions.https.onCall((data, context) => {
+  console.log('FUNCTION CALLED');
   if (context.auth.token.admin === true) {
-    return getUsers();
+    console.log('GET USERS');
+    return getUsers().catch(error => console.log(error));
   }
   else {
-    throw new Error("Unauthenticated");
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be authenticated.');
   }
 });
 
-getRaffle = async (id) => {
-  const raffles = await db.collection('quiz').doc('web-client').collection('raffles').doc(id).collection('subscribers').get();
-  const wb = XLSX.utils.book_new();
-  wb.SheetNames.push("Raffle");
-  raffleSheet = [];
-  raffleSheet.push(['First Name', 'Last Name', 'Email']);
-  raffles.docs.forEach(doc => {
-    const data = doc.data();
-    raffleSheet.push([data.firstName, data.lastName, data.email]);
-  });
-  const raffleWS = XLSX.utils.aoa_to_sheet(raffleSheet);
-  wb.Sheets["Raffle"] = raffleWS;
-  const storage = new Storage();
-  const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
-  const bucket = storage.bucket(functions.config().config.bucket);
-  const file = bucket.file(`${id}.xlsx`);
-  await file.save(buffer);
-  const config = {
-    version: 'v2',
-    action: 'read',
-    expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
-  };
-  const [url] = await file.getSignedUrl(config);
-  return url;
+const getRaffle = async (id) => {
+  try {
+    const raffles = await db.collection('quiz').doc('web-client').collection('raffles').doc(id).collection('subscribers').get();
+    const wb = XLSX.utils.book_new();
+    wb.SheetNames.push("Raffle");
+    raffleSheet = [];
+    raffleSheet.push(['First Name', 'Last Name', 'Email']);
+    raffles.docs.forEach(doc => {
+      const data = doc.data();
+      raffleSheet.push([data.firstName, data.lastName, data.email]);
+    });
+    const raffleWS = XLSX.utils.aoa_to_sheet(raffleSheet);
+    wb.Sheets["Raffle"] = raffleWS;
+    const storage = new Storage();
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+    const bucket = storage.bucket(functions.config().config.bucket);
+    const file = bucket.file(`${id}.xlsx`);
+    await file.save(buffer);
+    const config = {
+      version: 'v2',
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+    };
+    const [url] = await file.getSignedUrl(config);
+    return url;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-exports.raffleSpreadsheet = functions.https.onCall((data, context) => {
+exports.raffle = functions.https.onCall((data, context) => {
   if (context.auth.token.admin === true) {
-    return getRaffle(data.id);
+    try {
+      return getRaffle(data.id);
+    }
+    catch (error) {
+      console.log(error);
+    }
   }
   else {
-    throw new Error("Unauthenticated");
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be authenticated.');
   }
 });
