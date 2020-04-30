@@ -27,11 +27,6 @@ jobs:
       with:
         name: build-admin-prod
         path: build
-    - name: Archive Production Functions Build
-      uses: actions/upload-artifact@master
-      with:
-        name: build-admin-functions-prod
-        path: functions
   deploy:
     name: Deploy
     needs: build
@@ -44,11 +39,6 @@ jobs:
         with:
           name: build-admin-prod
           path: build/
-      - name: Download Functions Artifact
-        uses: actions/download-artifact@master
-        with:
-          name: build-admin-functions-prod
-          path: functions/
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.3.0
         with:
