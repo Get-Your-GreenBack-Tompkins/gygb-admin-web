@@ -101,8 +101,12 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
 
   function edit(questionId?: string) {
     if (questionId != null) {
-      saveQuestion(questionId).then(() => close());
+      saveQuestion(questionId).then(() => {
+        setAnswers([]);
+        close();
+      });
     } else {
+      setAnswers([]);
       close();
     }
   }
@@ -176,6 +180,8 @@ export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, 
   useEffect(() => {
     if (questionId) {
       getQuestion();
+    } else {
+      setAnswers([]);
     }
   }, [questionId, getQuestion]);
 
