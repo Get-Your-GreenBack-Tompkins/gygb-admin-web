@@ -2,6 +2,7 @@ import React, { createContext } from "react";
 
 import * as firebase from "firebase/app";
 import "firebase/auth";
+import "firebase/functions";
 
 import createApi, { ApiContext } from "../api";
 
