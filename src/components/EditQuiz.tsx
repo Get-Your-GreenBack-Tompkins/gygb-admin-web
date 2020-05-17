@@ -53,6 +53,8 @@ export class EditQuiz extends Component<
   }
 
   deleteQuestion(question: any) {
+    // Offer a quick sanity check for deletion.
+    alert(`Are you sure you can to delete this question?`);
     this.context.delete(`quiz/web-client/question/${question.id}`).then(() => this.getQuestions());
   }
 
