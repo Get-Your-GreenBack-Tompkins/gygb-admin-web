@@ -73,8 +73,8 @@ export const EditTerms: React.FC<{}> = () => {
       .get(`tos/edit`)
       .then(res => {
         setToS(res.data);
-        setEditedHotshot(parseDelta(res.data.hotshot));
-        setEditedQuiz(parseDelta(res.data.quiz));
+        setEditedHotshot(parseDelta(res.data.hotshot.text.delta));
+        setEditedQuiz(parseDelta(res.data.quiz.text.delta));
         setLoadingToS(false);
       })
       .catch(err => {
@@ -128,7 +128,7 @@ export const EditTerms: React.FC<{}> = () => {
           </IonRow>
           <IonRow>
             <IonCol>
-              <IonButton onClick={() => save()}>Save</IonButton>
+              <IonButton onClick={() => save()}>Save Terms of Service</IonButton>
             </IonCol>
           </IonRow>
         </IonGrid>

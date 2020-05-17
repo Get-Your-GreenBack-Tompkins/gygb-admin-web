@@ -60,7 +60,7 @@ export enum Page {
 }
 
 export const EditQuestion: React.FC<EditQuestionProps> = ({ isOpen, questionId, close }) => {
-  const [question, setQuestion] = useState();
+  const [question, setQuestion] = useState(null as null | any);
 
   const [editedHeader, setEditedHeader] = useState(null as null | string);
   const [editedBody, setEditedBody] = useState(null as null | QuillDelta);
