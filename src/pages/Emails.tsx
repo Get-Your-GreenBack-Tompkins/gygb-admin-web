@@ -1,7 +1,6 @@
 import {
   IonContent,
   IonPage,
-  IonList,
   IonItem,
   IonLabel,
   IonCard,
@@ -9,7 +8,8 @@ import {
   IonButton,
   IonIcon,
   IonCardHeader,
-  IonCardTitle
+  IonCardTitle,
+  IonProgressBar,
 } from "@ionic/react";
 import React, { useContext, useCallback, useEffect, useState } from "react";
 import firebase from "firebase/app";
@@ -20,7 +20,8 @@ import { ApiContext } from "../api";
 import ErrorContent from "../components/ErrorContent";
 
 const Emails: React.FC = () => {
-  const [emails, setEmails] = useState();
+  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [emails, setEmails] = useState([] as string[]);
   const [loadingError, setLoadingError] = useState(false);
 
   const api = useContext(ApiContext);
@@ -30,22 +31,26 @@ const Emails: React.FC = () => {
 
     api
       .get("/user/emails/marketing/")
-      .then(res => setEmails(res.data.emailList))
-      .catch(err => {
+      .then((res) => setEmails(res.data.emailList))
+      .catch((err) => {
         setLoadingError(true);
         console.log(err);
       });
   }, [api]);
 
   const downloadSpreadsheet = () => {
+    setLoadingInfo(true);
     const callable = firebase.functions().httpsCallable("marketing");
     callable({})
-      .then(result => {
+      .then((result) => {
         const url = result.data;
 
         window.open(url);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err))
+      .finally(() => {
+        setLoadingInfo(false);
+      });
   };
 
   useEffect(() => {
@@ -58,12 +63,16 @@ const Emails: React.FC = () => {
 
   return (
     <IonPage>
+      {loadingInfo ? <IonProgressBar type="indeterminate" reversed={true}></IonProgressBar> : null}
       <IonContent className="ion-padding">
         <IonCard>
           <IonCardHeader>
             <IonCardTitle>Email List Download</IonCardTitle>
           </IonCardHeader>
-          <IonCardContent>Download the entire marketing email list here!</IonCardContent>
+          <IonCardContent>
+            Download the entire marketing email list here!{" "}
+            {`You currently have ${emails.length} subscribers.`}
+          </IonCardContent>
           <IonItem>
             <IonButton
               onClick={() => {
@@ -76,15 +85,6 @@ const Emails: React.FC = () => {
             </IonButton>
           </IonItem>
         </IonCard>
-        <IonList>
-          {emails &&
-            Array.isArray(emails) &&
-            emails.map((x: string, i) => (
-              <IonItem key={i}>
-                <IonLabel> {x} </IonLabel>
-              </IonItem>
-            ))}
-        </IonList>
       </IonContent>
     </IonPage>
   );

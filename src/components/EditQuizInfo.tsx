@@ -9,7 +9,7 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonInput
+  IonInput,
 } from "@ionic/react";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 
@@ -50,8 +50,8 @@ export const EditQuizInfo: React.FC<{}> = () => {
       name: name,
       tutorial: {
         header: tutorialHeader,
-        body: JSON.stringify(tutorial)
-      }
+        body: JSON.stringify(tutorial),
+      },
     };
 
     api
@@ -59,7 +59,7 @@ export const EditQuizInfo: React.FC<{}> = () => {
       .then(() => {
         setLoadingInfo(false);
       })
-      .catch(err => {
+      .catch((err) => {
         alert(
           "Unable to save, consider copying your content into a separate document and reloading the page."
         );
@@ -73,14 +73,14 @@ export const EditQuizInfo: React.FC<{}> = () => {
 
     api
       .get(`quiz/web-client/edit`)
-      .then(res => {
+      .then((res) => {
         setQuestionCount(res.data.questionCount);
-        setTutorial(parseDelta(res.data.tutorial.body));
+        setTutorial(parseDelta(res.data.tutorial.body.delta));
         setTutorialHeader(res.data.tutorial.header);
         setName(res.data.name);
         setLoadingInfo(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setLoadingInfo(false);
         setLoadingError(true);
         console.log(err);
@@ -113,7 +113,8 @@ export const EditQuizInfo: React.FC<{}> = () => {
                   <IonLabel>Name</IonLabel>
                   <IonInput
                     value={name}
-                    onIonChange={a => {
+                    slot="end"
+                    onIonChange={(a) => {
                       const content = a.detail.value || null;
 
                       if (content) {
@@ -126,8 +127,9 @@ export const EditQuizInfo: React.FC<{}> = () => {
                   <IonLabel>Question Count</IonLabel>
                   <IonInput
                     type="number"
+                    slot="end"
                     value={questionCount}
-                    onIonChange={a => {
+                    onIonChange={(a) => {
                       const content = a.detail.value || null;
 
                       if (content) {
@@ -139,8 +141,9 @@ export const EditQuizInfo: React.FC<{}> = () => {
                 <IonItem>
                   <IonLabel>Tutorial Header</IonLabel>
                   <IonInput
+                    slot="end"
                     value={tutorialHeader}
-                    onIonChange={a => {
+                    onIonChange={(a) => {
                       const content = a.detail.value || null;
 
                       if (content) {
@@ -150,14 +153,24 @@ export const EditQuizInfo: React.FC<{}> = () => {
                   />
                 </IonItem>
                 <IonItem>
-                  <IonLabel>Tutorial Body</IonLabel>
-                  <ReactQuill
-                    style={{ width: "100%" }}
-                    value={tutorial}
-                    onChange={(_html, _delta, _source, editor) => {
-                      setTutorial(editor.getContents());
-                    }}
-                  />
+                  <IonGrid style={{ padding: "10px 0" }}>
+                    <IonRow>
+                      <IonCol style={{padding: "5px 0"}}>
+                        <IonLabel>Tutorial Body</IonLabel>
+                      </IonCol>
+                    </IonRow>
+                    <IonRow>
+                      <IonCol style={{padding: "10px 0"}}>
+                        <ReactQuill
+                          style={{ width: "100%" }}
+                          value={tutorial}
+                          onChange={(_html, _delta, _source, editor) => {
+                            setTutorial(editor.getContents());
+                          }}
+                        />
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
                 </IonItem>
               </IonList>
             </IonCol>
@@ -165,7 +178,7 @@ export const EditQuizInfo: React.FC<{}> = () => {
 
           <IonRow>
             <IonCol>
-              <IonButton onClick={() => save()}>Save</IonButton>
+              <IonButton onClick={() => save()}>Save Quiz Info</IonButton>
             </IonCol>
           </IonRow>
         </IonGrid>

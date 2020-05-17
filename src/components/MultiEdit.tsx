@@ -62,7 +62,7 @@ export const MultiEdit: React.FC<MultiEditProps> = ({ value, onChange: $onChange
                       theme="" // Use '' (base) theme.
                       className="admin-text-input"
                       value={answer.text.delta}
-                      onChange={(html, delta, source, editor) => {
+                      onChange={(_html, _delta, _source, editor) => {
                         const v = value.find(a => a.id === answer.id);
                         v.text.delta = editor.getContents();
 

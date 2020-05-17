@@ -13,14 +13,14 @@ import {
   IonLabel,
   IonText,
   IonListHeader,
-  IonIcon
+  IonIcon,
 } from "@ionic/react";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import firebase from "firebase/app";
 
 import { ApiContext } from "../api";
 import ErrorContent from "./ErrorContent";
-import { download, trophy } from "ionicons/icons";
+import { create, download, trophy } from "ionicons/icons";
 
 export const EditRaffle: React.FC<{}> = () => {
   const [loadingInfo, setLoadingInfo] = useState(false);
@@ -30,11 +30,12 @@ export const EditRaffle: React.FC<{}> = () => {
   const [openModal, setOpenModal] = useState(false);
   const [prize, setPrize] = useState(null as string | null);
   const [questionRequirement, setQuestionRequirement] = useState(null as string | null);
+  const [editMode, setEditMode] = useState(true);
 
   const api = useContext(ApiContext);
 
   const getAllRaffles = useCallback(() => {
-    api.get(`quiz/web-client/raffle/list`).then(res => {
+    api.get(`quiz/web-client/raffle/list`).then((res) => {
       setAllRaffles(res.data.raffles);
     });
   }, [api]);
@@ -42,25 +43,67 @@ export const EditRaffle: React.FC<{}> = () => {
   function drawWinner() {
     api
       .get(`quiz/web-client/raffle/winner`)
-      .then(_ => {
+      .then((_) => {
         return getAllRaffles();
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
   }
 
   function downloadRaffle(id: string) {
+    setLoadingInfo(true);
     const callable = firebase.functions().httpsCallable("raffle");
     callable({
-      id
+      id,
     })
-      .then(result => {
+      .then((result) => {
         const url = result.data;
 
         window.open(url);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err))
+      .finally(() => {
+        setLoadingInfo(false);
+      });
+  }
+
+  function editRaffle() {
+    setLoadingInfo(true);
+
+    if (!questionRequirement || !prize) {
+      alert("Not all values provided!");
+      return;
+    }
+
+    const parsed = Number.parseFloat(questionRequirement);
+    if (parsed === Number.NaN || parsed > 1) {
+      alert("Question Count is not a percentage! (e.g. 0.5, 0.75)");
+      setLoadingInfo(false);
+      return;
+    }
+
+    const edit = {
+      requirement: parsed,
+      prize,
+    };
+
+    api
+      .post(`quiz/web-client/raffle/edit`, edit)
+      .then(() => {
+        setLoadingInfo(false);
+        setIsRaffle(true);
+      })
+      .catch((err) => {
+        alert(
+          "Unable to save, consider copying your content into a separate document and reloading the page."
+        );
+        setLoadingInfo(false);
+        console.log(err);
+      })
+      .finally(() => {
+        setOpenModal(false);
+      });
   }
 
   function newRaffle() {
@@ -80,7 +123,7 @@ export const EditRaffle: React.FC<{}> = () => {
 
     const edit = {
       questionRequirement: parsed,
-      prize
+      prize,
     };
 
     api
@@ -89,12 +132,15 @@ export const EditRaffle: React.FC<{}> = () => {
         setLoadingInfo(false);
         setIsRaffle(true);
       })
-      .catch(err => {
+      .catch((err) => {
         alert(
           "Unable to save, consider copying your content into a separate document and reloading the page."
         );
         setLoadingInfo(false);
         console.log(err);
+      })
+      .finally(() => {
+        setOpenModal(false);
       });
   }
 
@@ -106,14 +152,14 @@ export const EditRaffle: React.FC<{}> = () => {
     setLoadingError(false);
 
     api
-      .get(`quiz/web-client/raffle`)
-      .then(res => {
-        setQuestionRequirement(res.data.questionRequirement);
+      .get(`quiz/web-client/raffle/edit`)
+      .then((res) => {
+        setQuestionRequirement(res.data.requirement);
         setPrize(res.data.prize);
         setIsRaffle(true);
         setLoadingInfo(false);
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.response && err.response.status === 404) {
           setIsRaffle(false);
         } else {
@@ -153,7 +199,7 @@ export const EditRaffle: React.FC<{}> = () => {
                     <IonInput
                       type="number"
                       value={questionRequirement}
-                      onIonChange={a => {
+                      onIonChange={(a) => {
                         const content = a.detail.value || null;
 
                         if (content) {
@@ -166,7 +212,7 @@ export const EditRaffle: React.FC<{}> = () => {
                     <IonLabel position="floating">Prize</IonLabel>
                     <IonInput
                       value={prize}
-                      onIonChange={a => {
+                      onIonChange={(a) => {
                         const content = a.detail.value || null;
 
                         if (content) {
@@ -181,15 +227,32 @@ export const EditRaffle: React.FC<{}> = () => {
 
             <IonRow>
               <IonCol>
-                <IonButton onClick={() => newRaffle()}>Create New Raffle</IonButton>
+                <IonButton onClick={() => (editMode ? editRaffle() : newRaffle())}>
+                  {editMode ? "Save Raffle" : "Create New Raffle"}
+                </IonButton>
               </IonCol>
             </IonRow>
           </IonGrid>
         </IonModal>
         {isRaffle ? (
           <>
+            <IonListHeader>
+              <IonLabel>
+                <h2>Current Raffle</h2>
+              </IonLabel>
+              <IonButton
+                size="small"
+                fill="outline"
+                onClick={() => {
+                  setEditMode(true);
+                  setOpenModal(true);
+                }}
+              >
+                <IonIcon slot="start" icon={create}></IonIcon>
+                Edit Current Raffle
+              </IonButton>
+            </IonListHeader>
             <IonList>
-              <IonListHeader>Current Raffle</IonListHeader>
               <IonItem>
                 <IonLabel>
                   <b>Prize</b>
@@ -218,14 +281,25 @@ export const EditRaffle: React.FC<{}> = () => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  <IonButton onClick={() => setOpenModal(true)}>Create New Raffle</IonButton>
+                  <IonButton
+                    onClick={() => {
+                      setEditMode(false);
+                      setOpenModal(true);
+                    }}
+                  >
+                    Create New Raffle
+                  </IonButton>
                 </IonCol>
               </IonRow>
             </IonGrid>
           </>
         )}
+        <IonListHeader>
+          <IonLabel>
+            <h2>All Raffles</h2>
+          </IonLabel>
+        </IonListHeader>
         <IonList>
-          <IonListHeader>All Raffles</IonListHeader>
           {allRaffles.map((r, i) => {
             console.log(r);
             return (
@@ -236,7 +310,7 @@ export const EditRaffle: React.FC<{}> = () => {
                       {new Date(r.month).toLocaleDateString(undefined, {
                         month: "long",
                         year: "numeric",
-                        timeZone: "UTC"
+                        timeZone: "UTC",
                       })}
                     </b>
                   </IonLabel>
@@ -254,7 +328,7 @@ export const EditRaffle: React.FC<{}> = () => {
                       drawWinner();
                     }}
                   >
-                    <IonIcon icon={trophy}></IonIcon>
+                    <IonIcon slot="start" icon={trophy}></IonIcon>
                     Draw Winner
                   </IonButton>
                   <IonButton
@@ -262,7 +336,7 @@ export const EditRaffle: React.FC<{}> = () => {
                       downloadRaffle(r.id);
                     }}
                   >
-                    <IonIcon icon={download}></IonIcon>
+                    <IonIcon slot="start" icon={download}></IonIcon>
                     Download
                   </IonButton>
                 </IonItem>

@@ -7,6 +7,7 @@ export function parseDelta(deltaString: string) {
   try {
     delta = JSON.parse(deltaString);
   } catch (err) {
+    console.log(err);
     delta = null;
   }
 
