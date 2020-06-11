@@ -6,15 +6,13 @@ import {
   IonCol,
   IonGrid,
   IonLabel,
-  IonButton
+  IonButton,
+  IonInput,
+  IonItem
 } from "@ionic/react";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 
-import { Delta as QuillDelta } from "quill";
-import ReactQuill from "react-quill";
-
 import { ApiContext } from "../api";
-import { parseDelta } from "../util";
 
 import { ToS } from "../types/tos";
 import ErrorContent from "./ErrorContent";
@@ -23,8 +21,8 @@ export const EditTerms: React.FC<{}> = () => {
   const [loadingError, setLoadingError] = useState(false);
   const [loadingToS, setLoadingToS] = useState(false);
   const [tos, setToS] = useState(null as ToS | null);
-  const [editedHotshot, setEditedHotshot] = useState(null as QuillDelta | null);
-  const [editedQuiz, setEditedQuiz] = useState(null as QuillDelta | null);
+  const [editedHotshot, setEditedHotshot] = useState(null as string | null);
+  const [editedQuiz, setEditedQuiz] = useState(null as string | null);
 
   const api = useContext(ApiContext);
 
@@ -73,8 +71,8 @@ export const EditTerms: React.FC<{}> = () => {
       .get(`tos/edit`)
       .then(res => {
         setToS(res.data);
-        setEditedHotshot(parseDelta(res.data.hotshot.text.delta));
-        setEditedQuiz(parseDelta(res.data.quiz.text.delta));
+        setEditedHotshot(res.data.hotshot.link);
+        setEditedQuiz(res.data.quiz.link);
         setLoadingToS(false);
       })
       .catch(err => {
@@ -94,41 +92,65 @@ export const EditTerms: React.FC<{}> = () => {
   }
 
   if (!tos || !editedQuiz || !editedHotshot) {
-    return <IonLoading isOpen={true} message={"Loading Terms of Service..."} duration={0} />;
+    return (
+      <IonLoading
+        isOpen={true}
+        message={"Loading Terms of Service..."}
+        duration={0}
+      />
+    );
   }
 
   return (
     <>
-      {loadingToS ? <IonProgressBar type="indeterminate" reversed={true}></IonProgressBar> : null}
+      {loadingToS ? (
+        <IonProgressBar type="indeterminate" reversed={true}></IonProgressBar>
+      ) : null}
       <IonContent>
         <IonGrid>
           <IonRow>
             <IonCol>
-              <IonLabel>Web Quiz Terms of Service</IonLabel>
-              <ReactQuill
-                style={{ width: "100%" }}
-                value={editedQuiz}
-                onChange={(_html, _delta, _source, editor) => {
-                  setEditedQuiz(editor.getContents());
-                }}
-              />
+              <IonItem>
+                <IonLabel position="stacked">
+                  Web Quiz Terms of Service Link
+                </IonLabel>
+                <IonInput
+                  type="url"
+                  style={{ width: "100%" }}
+                  value={editedQuiz}
+                  onIonChange={e => {
+                    const { value } = e.detail;
+
+                    setEditedQuiz(value || "");
+                  }}
+                />
+              </IonItem>
             </IonCol>
           </IonRow>
           <IonRow>
             <IonCol>
-              <IonLabel>iOS (HotShot) Terms of Service</IonLabel>
-              <ReactQuill
-                style={{ width: "100%" }}
-                value={editedHotshot}
-                onChange={(_html, _delta, _source, editor) => {
-                  setEditedHotshot(editor.getContents());
-                }}
-              />
+              <IonItem>
+                <IonLabel position="stacked">
+                  iOS (HotShot) Terms of Service Link
+                </IonLabel>
+                <IonInput
+                  type="url"
+                  style={{ width: "100%" }}
+                  value={editedHotshot}
+                  onIonChange={e => {
+                    const { value } = e.detail;
+
+                    setEditedHotshot(value || "");
+                  }}
+                />
+              </IonItem>
             </IonCol>
           </IonRow>
           <IonRow>
             <IonCol>
-              <IonButton onClick={() => save()}>Save Terms of Service</IonButton>
+              <IonButton onClick={() => save()}>
+                Save Terms of Service
+              </IonButton>
             </IonCol>
           </IonRow>
         </IonGrid>
