@@ -26,6 +26,8 @@ export const EditQuizInfo: React.FC<{}> = () => {
   const [tutorial, setTutorial] = useState(null as QuillDelta | null);
   const [tutorialHeader, setTutorialHeader] = useState(null as string | null);
   const [questionCount, setQuestionCount] = useState(null as string | null);
+  const [prize, setPrize] = useState(null as string | null);
+  const [questionRequirement, setQuestionRequirement] = useState(null as string | null);
   const [name, setName] = useState(null as string | null);
 
   const api = useContext(ApiContext);
@@ -33,7 +35,7 @@ export const EditQuizInfo: React.FC<{}> = () => {
   function save() {
     setLoadingInfo(true);
 
-    if (!questionCount || !tutorial || !tutorialHeader || !name) {
+    if (!prize || !questionRequirement || !questionCount || !tutorial || !tutorialHeader || !name) {
       alert("Not all values provided!");
       return;
     }
@@ -45,6 +47,13 @@ export const EditQuizInfo: React.FC<{}> = () => {
       return;
     }
 
+    const parsedRequirement = Number.parseFloat(questionRequirement);
+    if (parsedRequirement === Number.NaN) {
+      alert("Default Raffle Requirement is not a percentage!");
+      setLoadingInfo(false);
+      return;
+    }
+
     const edit = {
       questionCount: parsed,
       name: name,
@@ -52,6 +61,10 @@ export const EditQuizInfo: React.FC<{}> = () => {
         header: tutorialHeader,
         body: JSON.stringify(tutorial),
       },
+      defaultRaffle: {
+        prize,
+        requirement: parsedRequirement
+      }
     };
 
     api
@@ -75,6 +88,8 @@ export const EditQuizInfo: React.FC<{}> = () => {
       .get(`quiz/web-client/edit`)
       .then((res) => {
         setQuestionCount(res.data.questionCount);
+        setQuestionRequirement(res.data.defaultRaffle.requirement);
+        setPrize(res.data.defaultRaffle.prize);
         setTutorial(parseDelta(res.data.tutorial.body.delta));
         setTutorialHeader(res.data.tutorial.header);
         setName(res.data.name);
@@ -171,6 +186,34 @@ export const EditQuizInfo: React.FC<{}> = () => {
                       </IonCol>
                     </IonRow>
                   </IonGrid>
+                </IonItem>
+                <IonItem>
+                  <IonLabel>Default Raffle Prize</IonLabel>
+                  <IonInput
+                    slot="end"
+                    value={prize}
+                    onIonChange={(a) => {
+                      const content = a.detail.value || null;
+
+                      if (content) {
+                        setPrize(content);
+                      }
+                    }}
+                  />
+                </IonItem>
+                <IonItem>
+                  <IonLabel>Default Raffle Requirement</IonLabel>
+                  <IonInput
+                    slot="end"
+                    value={questionRequirement}
+                    onIonChange={(a) => {
+                      const content = a.detail.value || null;
+
+                      if (content) {
+                        setQuestionRequirement(content);
+                      }
+                    }}
+                  />
                 </IonItem>
               </IonList>
             </IonCol>
