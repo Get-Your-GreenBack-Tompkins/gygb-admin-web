@@ -36,7 +36,7 @@ export const EditTerms: React.FC<{}> = () => {
         api.post(`tos/quiz/edit`, {
           platform: "quiz",
           version: "1.0",
-          text: JSON.stringify(editedQuiz)
+          link: `${editedQuiz}`
         })
       );
     }
@@ -46,7 +46,7 @@ export const EditTerms: React.FC<{}> = () => {
         api.post(`tos/hotshot/edit`, {
           platform: "hotshot",
           version: "1.0",
-          text: JSON.stringify(editedHotshot)
+          link: `${editedHotshot}`
         })
       );
     }
